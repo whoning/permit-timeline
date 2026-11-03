@@ -1,0 +1,1270 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="사업 개요를 넣으면 심의·영향평가 대상을 판정하고 인허가 일정표를 만드는 도구">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%231a4f9c%27/%3E%3Crect x=%277%27 y=%279%27 width=%2712%27 height=%274%27 rx=%271%27 fill=%27%23fff%27/%3E%3Crect x=%2712%27 y=%2716%27 width=%2713%27 height=%274%27 rx=%271%27 fill=%27%23c8961e%27/%3E%3C/svg%3E">
+</head>
+<body>
+<title>인허가 타임라인</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+/* Layout: 상단 프로젝트 바 → 단계 탭(개요·판정·일정) → 탭별 작업면. 일정 탭은 간트(좌) + 속성 패널(우). */
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --surface2:#f0f3f8; --fg:#152033; --muted:#5b6678; --line:#d9dfe8; --line2:#edf0f5;
+  --accent:#1a4f9c; --accent-weak:#e6edf8; --accent-fg:#ffffff; --gold:#b9861a; --gold-weak:#faf2de;
+  --ok:#23704a; --ok-weak:#e2f2e9; --warn:#9a5a00; --warn-weak:#fcefd9; --no:#6a7484; --no-weak:#eceff3; --danger:#b3261e;
+  --today:#d0342c; --shadow:0 6px 24px rgba(20,32,51,.12);
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e131a; --surface:#151c26; --surface2:#1b2431; --fg:#e4e9f0; --muted:#97a2b3; --line:#2b3645; --line2:#202a37;
+  --accent:#7aa5ea; --accent-weak:#1e2d45; --accent-fg:#0e131a; --gold:#e0b04a; --gold-weak:#3a2f15;
+  --ok:#6cc596; --ok-weak:#173527; --warn:#f0b35a; --warn-weak:#3b2a10; --no:#9aa4b4; --no-weak:#232c38; --danger:#ff8a80;
+  --today:#ff6b61; --shadow:0 6px 24px rgba(0,0,0,.45); color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0e131a; --surface:#151c26; --surface2:#1b2431; --fg:#e4e9f0; --muted:#97a2b3; --line:#2b3645; --line2:#202a37;
+  --accent:#7aa5ea; --accent-weak:#1e2d45; --accent-fg:#0e131a; --gold:#e0b04a; --gold-weak:#3a2f15;
+  --ok:#6cc596; --ok-weak:#173527; --warn:#f0b35a; --warn-weak:#3b2a10; --no:#9aa4b4; --no-weak:#232c38; --danger:#ff8a80;
+  --today:#ff6b61; --shadow:0 6px 24px rgba(0,0,0,.45); color-scheme:dark;}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:13px;line-height:1.5}
+*{box-sizing:border-box}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#app{height:100%;display:grid;grid-template-rows:auto auto 1fr auto;padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px))}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+/* top bar */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding-block:10px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.brand b{font-size:14px;font-weight:700;letter-spacing:-.01em}
+.brand small{color:var(--muted);font-size:11px}
+.proj{display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-width:0}
+.proj select{max-width:280px}
+.grow{flex:1}
+.save{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.save i{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block}
+.save.busy i{background:var(--gold)} .save.local i{background:var(--no)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:5px 10px;cursor:pointer;white-space:nowrap;line-height:1.4}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:600}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.sm{padding:3px 8px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:default}
+select,input[type=text],input[type=number],input[type=month],textarea{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:5px 8px;min-width:0}
+textarea{resize:vertical}
+.menu{position:relative}
+.menu-pop{position:absolute;right:0;top:calc(100% + 4px);background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:6px;z-index:50;min-width:210px;display:flex;flex-direction:column}
+.menu-pop[hidden]{display:none}
+.menu-pop button{text-align:left;border:0;background:none;padding:7px 10px;border-radius:5px;cursor:pointer}
+.menu-pop button:hover{background:var(--accent-weak)}
+.menu-pop small{color:var(--muted);display:block;font-size:11px}
+/* tabs */
+.tabs{display:flex;gap:2px;background:var(--surface);border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{border:0;background:none;padding:10px 14px 9px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;display:flex;gap:8px;align-items:center;white-space:nowrap}
+.tab .no{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent);font-weight:600}
+.tab .cnt{font-size:11px;background:var(--accent-weak);color:var(--accent);border-radius:9px;padding:0 7px;font-weight:600}
+main{min-height:0;overflow:hidden;position:relative}
+.view{height:100%;overflow:auto}
+.view[hidden]{display:none}
+/* input form */
+.form{max-width:1080px;margin:0 auto;padding-block:20px 40px;display:grid;gap:18px}
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.sec h2{font-size:13.5px;margin:0 0 12px;display:flex;gap:8px;align-items:baseline}
+.sec h2 small{font-weight:400;color:var(--muted);font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px 14px}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld label{font-size:12px;color:var(--muted)}
+.fld .hint{font-size:11px;color:var(--muted)}
+.fld .src{font-size:11px;color:var(--accent);line-height:1.4}
+.unk{font-style:normal;font-size:10.5px;font-weight:600;color:var(--warn);background:var(--warn-weak);border-radius:4px;padding:0 5px;margin-left:4px}
+.memo{width:100%;min-height:120px;line-height:1.55}
+.fld input,.fld select{width:100%}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.unit{display:flex;align-items:center;gap:6px}.unit span{color:var(--muted);font-size:12px}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px 14px}
+.chk{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line2);border-radius:8px;cursor:pointer}
+.chk:hover{border-color:var(--line)}
+.chk input{margin-top:3px}
+.chk small{display:block;color:var(--muted);font-size:11.5px}
+.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.note{font-size:12px;color:var(--muted)}
+.banner{border-radius:8px;padding:10px 14px;font-size:12.5px;border:1px solid}
+.banner.warn{background:var(--warn-weak);border-color:color-mix(in srgb,var(--warn) 35%,transparent);color:var(--fg)}
+.banner.info{background:var(--accent-weak);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+/* verdict */
+.vwrap{max-width:1280px;margin:0 auto;padding-block:20px 40px;display:grid;gap:14px}
+.sum{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
+.sum .k{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 16px;min-width:120px}
+.sum .k b{font-size:22px;font-family:var(--f-mono);font-weight:500;display:block;line-height:1.2}
+.sum .k span{font-size:12px;color:var(--muted)}
+.sum .path{flex:1;min-width:240px;display:flex;flex-direction:column;justify-content:center}
+.sum .path b{font-family:var(--f-body);font-size:15px}
+.tbl-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table.vt{border-collapse:collapse;width:100%;min-width:980px}
+.vt th{font-size:11.5px;color:var(--muted);font-weight:500;text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);background:var(--surface2);position:sticky;top:0}
+.vt td{padding:9px 12px;border-bottom:1px solid var(--line2);vertical-align:top}
+.vt tr.cat td{background:var(--surface2);font-weight:600;font-size:12px;color:var(--muted);padding:6px 12px}
+.vt .nm{font-weight:600}
+.vt .why{color:var(--fg)}
+.vt .law{font-size:12px;color:var(--muted)}
+.vt .memo{font-size:11.5px;color:var(--muted);margin-top:4px}
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 9px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.pill.Y{background:var(--ok-weak);color:var(--ok)} .pill.N{background:var(--no-weak);color:var(--no)} .pill.Q{background:var(--warn-weak);color:var(--warn)}
+.pill.ov{outline:1px dashed currentColor}
+.conf{font-size:11px;white-space:nowrap;border-radius:4px;padding:1px 6px;border:1px solid var(--line)}
+.conf.A{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent)}
+.conf.C{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
+/* gantt */
+.gview{display:grid;grid-template-columns:minmax(0,1fr) 300px;height:100%}
+.gmain{display:grid;grid-template-rows:auto 1fr;min-width:0;min-height:0}
+.gtool{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--line)}
+.gtool .sep{width:1px;height:20px;background:var(--line);margin:0 4px}
+.gtool .zoom{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);min-width:64px;text-align:center}
+.gscroll{overflow:auto;position:relative;background:var(--surface);min-height:0}
+.gbody{position:relative;min-width:max-content}
+.g-row{display:flex;height:30px;border-bottom:1px solid var(--line2)}
+.g-left{position:sticky;left:0;z-index:3;background:var(--surface);display:flex;align-items:center;border-right:1px solid var(--line);flex:none}
+.g-left .c-nm{flex:1;min-width:0;padding:0 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.g-left .c-ow{width:64px;padding:0 8px;color:var(--muted);font-size:12px;border-left:1px solid var(--line2);height:100%;display:flex;align-items:center;overflow:hidden;white-space:nowrap}
+.g-left .c-nt{width:150px;padding:0 8px;color:var(--muted);font-size:11.5px;border-left:1px solid var(--line2);height:100%;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.g-time{position:relative;flex:none;background-image:linear-gradient(to right,var(--line2) 1px,transparent 1px);}
+.g-row.sel .g-left,.g-row.sel .g-time{background-color:var(--accent-weak)}
+.g-row.grp{height:28px;background:var(--surface2)}
+.g-row.grp .g-left{background:var(--surface2);font-weight:600;font-size:12px}
+.g-row.grp .g-time{background-image:none}
+.g-row.grp .c-nm{display:flex;gap:6px;align-items:center}
+.g-row.grp .c-nm em{font-style:normal;color:var(--muted);font-weight:400;font-family:var(--f-mono);font-size:11px}
+.g-row.item .c-nm{padding-left:22px;cursor:pointer}
+.g-row.item .c-nm .tag{font-size:10.5px;color:var(--warn);margin-left:6px}
+.g-head{position:sticky;top:0;z-index:5;height:auto;background:var(--surface);border-bottom:1px solid var(--line)}
+.g-head .g-left{z-index:6;height:44px;font-size:11.5px;color:var(--muted);align-items:flex-end;padding-bottom:6px}
+.g-head .g-time{height:44px;background-image:none}
+.hm{position:absolute;top:0;height:26px;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;border-left:1px solid var(--line2);white-space:nowrap;overflow:hidden}
+.hm.yr{border-left-color:var(--line)}
+.hq{position:absolute;top:26px;height:18px;font-size:10px;color:var(--muted);display:flex;align-items:center;justify-content:center;font-family:var(--f-mono)}
+.bar{position:absolute;top:6px;height:18px;border-radius:4px;cursor:grab;display:flex;align-items:center;padding:0 6px;font-size:11px;color:#fff;white-space:nowrap;overflow:hidden;font-family:var(--f-mono);touch-action:none;user-select:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.bar.tent{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.35) 0 4px,transparent 4px 8px);outline:1.5px dashed var(--warn);outline-offset:1px}
+.bar.sel{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)}
+.bar .h{position:absolute;top:0;bottom:0;width:6px;cursor:ew-resize}
+.bar .h.l{left:0}.bar .h.r{right:0}
+.bar.dark-text{color:#14202f}
+.ms{position:absolute;top:7px;width:16px;height:16px;margin-left:-8px;cursor:grab;touch-action:none}
+.ms i{position:absolute;inset:2px;transform:rotate(45deg);border-radius:2px;box-shadow:0 0 0 1.5px var(--surface)}
+.ms.sel i{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)}
+.ms span{position:absolute;left:16px;top:-1px;font-size:11px;white-space:nowrap;color:var(--fg);pointer-events:none}
+.bar-lbl{position:absolute;top:6px;font-size:11px;color:var(--muted);white-space:nowrap;pointer-events:none;line-height:18px}
+.today{position:absolute;top:0;bottom:0;width:0;border-left:1.5px dashed var(--today);z-index:2;pointer-events:none}
+.today b{position:absolute;top:2px;left:3px;font-size:10px;color:var(--today);font-weight:600;white-space:nowrap;background:var(--surface);padding:0 3px}
+svg.deps{position:absolute;pointer-events:none;z-index:2;overflow:visible}
+svg.deps path{fill:none;stroke:var(--muted);stroke-width:1.2;opacity:.75}
+svg.deps path.hot{stroke:var(--accent);opacity:1;stroke-width:1.6}
+.gempty{padding:40px;text-align:center;color:var(--muted)}
+/* inspector */
+.insp{border-left:1px solid var(--line);background:var(--surface);overflow:auto;padding:14px 16px 30px;display:flex;flex-direction:column;gap:14px;min-height:0}
+.insp h3{font-size:12px;margin:0;color:var(--muted);font-weight:600;letter-spacing:.02em}
+.insp .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.insp .fld input,.insp .fld select,.insp .fld textarea{width:100%}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--surface);padding:5px 6px;cursor:pointer;font-size:12px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);font-weight:600}
+.pal{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pal button{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:6px;cursor:pointer;text-align:left;font-size:11.5px}
+.pal button[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.pal .sw{display:flex;height:8px;border-radius:2px;overflow:hidden;margin-bottom:4px}
+.pal .sw i{flex:1}
+.deplist{display:flex;flex-direction:column;gap:4px}
+.deplist .d{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:12px;background:var(--surface2);border-radius:5px;padding:3px 4px 3px 8px}
+.why-box{font-size:12px;background:var(--surface2);border-radius:8px;padding:10px 12px;display:grid;gap:4px}
+.why-box .law{color:var(--muted);font-size:11.5px}
+.tgl{display:flex;gap:8px;align-items:center;font-size:12.5px;cursor:pointer}
+/* footer */
+.foot{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;padding-block:6px;background:var(--surface);border-top:1px solid var(--line);font-size:11.5px;color:var(--muted)}
+.foot b{color:var(--fg);font-weight:600}
+/* modal + toast */
+.modal{position:fixed;inset:0;background:rgba(10,16,24,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal .box{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);max-width:440px;width:100%;padding:20px;display:grid;gap:14px}
+.modal .box p{margin:0;font-size:13.5px}
+.modal .box.guide{max-width:560px;max-height:calc(100% - 32px);overflow:auto}
+.guide h2{margin:0;font-size:17px}
+.guide ol{margin:0;padding-left:20px;display:grid;gap:6px}
+.guide .k2{background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:12.5px;display:grid;gap:4px}
+.guide .k2 b{font-size:12px}
+.modal .box .actions{justify-content:flex-end}
+.toast{position:fixed;left:50%;bottom:calc(52px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 16px;border-radius:8px;font-size:12.5px;z-index:120;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
+@media (max-width:900px){
+  .gview{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}
+  .insp{border-left:0;border-top:1px solid var(--line);max-height:42vh}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div id="app">
+  <header class="top wrap">
+    <div class="brand"><b>인허가 타임라인</b><small>개요 → 법령 판정 → 인허가 일정표</small></div>
+    <div class="proj">
+      <select id="projSel" aria-label="프로젝트 선택"></select>
+      <button class="btn sm" id="bNew">새 프로젝트</button>
+      <button class="btn sm" id="bDup">복제</button>
+      <button class="btn sm ghost" id="bDel">삭제</button>
+    </div>
+    <div class="grow"></div>
+    <button class="btn sm ghost" id="bHelp">사용 안내</button>
+    <div class="save" id="saveSt"><i></i><span>불러오는 중</span></div>
+    <button class="btn sm" id="bUndo" title="되돌리기 (Ctrl+Z)">↶</button>
+    <button class="btn sm" id="bRedo" title="다시 하기 (Ctrl+Y)">↷</button>
+    <div class="menu">
+      <button class="btn pri sm" id="bExp" aria-haspopup="true">내보내기</button>
+      <div class="menu-pop" id="expMenu" hidden>
+        <button data-x="xlsx">Excel (.xlsx)<small>개요 · 판정 근거 · 일정표 3개 시트</small></button>
+        <button data-x="png">이미지 (.png)<small>일정표 그림</small></button>
+        <button data-x="pdf">PDF (A3 가로)<small>일정표 그림을 A3 가로에 배치</small></button>
+        <button data-x="json">데이터 백업 (.json)<small>다시 불러올 수 있는 원본 데이터</small></button>
+        <button data-x="import">백업 불러오기…<small>.json 파일을 새 프로젝트로</small></button>
+      </div>
+      <input type="file" id="fImport" accept=".json,application/json" hidden>
+    </div>
+  </header>
+  <nav class="tabs wrap" role="tablist">
+    <button class="tab" role="tab" data-tab="input"><span class="no">01</span>사업 개요</button>
+    <button class="tab" role="tab" data-tab="verdict"><span class="no">02</span>법령 판정<span class="cnt" id="vCnt"></span></button>
+    <button class="tab" role="tab" data-tab="gantt"><span class="no">03</span>인허가 일정표</button>
+  </nav>
+  <main>
+    <section class="view" id="vInput"></section>
+    <section class="view" id="vVerdict" hidden></section>
+    <section class="view" id="vGantt" hidden>
+      <div class="gview">
+        <div class="gmain">
+          <div class="gtool" id="gTool"></div>
+          <div class="gscroll" id="gScroll"><div class="gbody" id="gBody"></div></div>
+        </div>
+        <aside class="insp" id="insp"></aside>
+      </div>
+    </section>
+  </main>
+  <footer class="foot wrap" id="foot"></footer>
+</div>
+
+<script>
+/* ============================================================
+   판정 기준표 — 확인일 2026-11-03
+   conf: 'B' = 해석례·공공기관·2차 자료로 확인(원문 대조 권장)
+         'C' = 기준값 확인 필요(자료 간 불일치·구버전 자료)
+   ============================================================ */
+const RULESET = { version: '0.4', date: '2026-11-03' };
+const SIDO = ['서울특별시','부산광역시','대구광역시','인천광역시','광주광역시','대전광역시','울산광역시','세종특별자치시','경기도','강원특별자치도','충청북도','충청남도','전북특별자치도','전라남도','경상북도','경상남도','제주특별자치도'];
+const ZONES = [
+  ['r1x','제1종전용주거지역','res'],['r2x','제2종전용주거지역','res'],['r1','제1종일반주거지역','res'],['r2','제2종일반주거지역','res'],['r3','제3종일반주거지역','res'],['rq','준주거지역','semi'],
+  ['cc','중심상업지역','com'],['cg','일반상업지역','com'],['cn','근린상업지역','com'],['cd','유통상업지역','comd'],
+  ['iq','준공업지역','ind'],['ig','일반공업지역','ind'],['ix','전용공업지역','ind'],
+  ['gn','자연녹지지역','green'],['gp','생산녹지지역','green'],['gc','보전녹지지역','green'],
+  ['mp','계획관리지역','nonurban'],['mpr','생산관리지역','nonurban'],['mc','보전관리지역','nonurban'],['ag','농림지역','nonurban'],['ne','자연환경보전지역','nonurban']];
+const TYPES = { housing:'주택건설사업 (주택법 사업계획승인)', permit:'건축허가 사업 (건축법)', redev:'정비사업 (재개발·재건축)' };
+const USES = { apt:'공동주택(아파트)', mixed:'주상복합', officetel:'오피스텔·업무', retail:'판매·근린생활', hotel:'숙박·관광', culture:'문화·집회·의료 등', etc:'기타' };
+const FLAGS = [
+  ['school','학교 경계 200m 이내','교육환경보호구역 — 교육환경평가 판정에 사용'],
+  ['dup','지구단위계획 결정·변경 필요','용도지역·용적률 상향 등 도시관리계획 절차 수반'],
+  ['station','역세권 사업','역세권 활성화·역세권 주택 등 — 지구단위계획 변경으로 처리'],
+  ['subway','지하역사·지하도상가와 연결','지하연계 복합건축물 판정에 사용'],
+  ['heritage','국가유산(문화재) 주변','역사문화환경 보존지역 — 현상변경 허가'],
+  ['scenic','경관지구·중점경관관리구역','경관심의 대상 판정에 사용'],
+  ['sale','분양 목적 건축물 (비주거)','오피스텔·상가 분양 등 — 서울 건축조례 심의 대상 판정 (공동주택은 분양으로 가정)'],
+  ['special','특수구조 건축물','대형 캔틸레버·장스팬 등 — 구조 심의']];
+const CATS = [['plan','설계'],['urban','도시계획'],['redev','정비사업 절차'],['assess','영향평가'],['review','심의'],['permit','인허가'],['cert','인증·성능'],['build','공사·준공']];
+const PALETTES = {
+  navy:{name:'남색·금색', c:{plan:'#9db8e0',urban:'#5f80b8',redev:'#3f5d8f',assess:'#2b62ad',review:'#1a4f9c',permit:'#0f2f5e',cert:'#c8961e',build:'#6b7a90'}},
+  teal:{name:'청록', c:{plan:'#9fd1cc',urban:'#4f9c95',redev:'#2f7a73',assess:'#1f8a80',review:'#0f6b63',permit:'#0b3f3a',cert:'#e39b47',build:'#6b7f7d'}},
+  ink:{name:'무채 (흑백 인쇄)', c:{plan:'#c2c7cf',urban:'#9aa1ab',redev:'#7b838e',assess:'#5f6772',review:'#454c56',permit:'#22272e',cert:'#8e8e8e',build:'#b0b5bc'}},
+  warm:{name:'적갈', c:{plan:'#e8b9a3',urban:'#c98667',redev:'#a5643f',assess:'#b35a3a',review:'#8a3b22',permit:'#4f2214',cert:'#3aa7a0',build:'#8a7b72'}}
+};
+const LIGHT_TEXT = new Set(['#9db8e0','#c8961e','#9fd1cc','#e39b47','#c2c7cf','#9aa1ab','#8e8e8e','#b0b5bc','#e8b9a3','#3aa7a0']);
+
+const fA = x => (+x||0).toLocaleString('ko-KR',{minimumFractionDigits:2,maximumFractionDigits:2}) + '㎡';
+const f1 = x => (+x||0).toLocaleString('ko-KR',{maximumFractionDigits:1});
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const Y = r => ({s:'Y', r}), N = r => ({s:'N', r}), Q = r => ({s:'Q', r});
+const ST = { Y:'대상', N:'비대상', Q:'확인 필요' };
+const CONF = { A:'원문 확인', B:'해석례·2차 자료', C:'기준값 확인 필요' };
+
+const RULES = [
+ {id:'hap', cat:'인허가', name:'주택건설사업계획승인', law:'주택법 제15조, 시행령 제27조 [시행 2026.9.8.]', conf:'A',
+  memo:'공동주택 30세대(단지형 연립·다세대 50세대) 이상. 주상복합 예외(제27조제4항): 준주거지역·상업지역(유통상업 제외)에서 300세대 미만이고 주택 연면적 비율 90% 미만. 2026.9 입법예고(300→500세대 등)는 현행 원문에 아직 반영되지 않음.',
+  fn: c => {
+    if (c.type==='redev') return N('정비사업 — 도시정비법 사업시행계획인가로 진행');
+    if (!c.res) return N(`${USES[c.use]} — 주택 없음`);
+    if (c.hh < 30) return N(`세대수 ${c.hh}세대 < 30세대`);
+    if (c.use==='mixed' && (c.zk==='com'||c.zk==='semi') && c.hh<300 && c.resRatio<90) return N(`주상복합 예외: ${c.zoneName}, ${c.hh}세대 < 300세대, 주택비율 ${c.resRatio}% < 90% → 건축허가`);
+    return Y(`공동주택 ${c.hh}세대 ≥ 30세대`);
+  }},
+ {id:'dup', cat:'도시계획', name:'지구단위계획 결정·변경', law:'국토계획법 제30조, 제49조~제52조', conf:'B',
+  memo:'입력값 기준. 도시·건축공동위원회(또는 도시계획위원회) 심의 후 결정 고시.',
+  fn: c => (c.f.dup||c.f.station) ? Y(c.f.station ? '역세권 사업 — 지구단위계획 변경 수반(입력)' : '지구단위계획 결정·변경 필요(입력)') : N('입력 없음')},
+ {id:'integ', cat:'심의', name:'통합심의', law:'주택법 제18조 [시행 2026.9.8.] / 도시정비법 제50조의2 [시행 2026.7.1.]', conf:'A',
+  memo:'주택법: 사업계획승인 신청자가 통합심의를 신청하면 의무. 대상은 건축·도시관리계획·광역교통·교통영향평가·경관·교육환경·성능위주설계·재해영향평가. 도시정비법: 사업시행계획인가 관련 심의가 둘 이상이면 통합심의 의무(위 항목에 환경영향평가 포함).',
+  fn: c => c.path==='housing' ? Y('사업계획승인 대상 → 통합심의 신청 시 의무') : c.path==='redev' ? Y('사업시행계획인가 관련 심의 둘 이상 → 통합심의 의무') : N('건축허가 사업 — 분야별 개별 심의')},
+ {id:'bc_metro', cat:'심의', name:'건축위원회 심의 (시·도)', law:'건축법 제11조, 시행령 제8조 · 서울시 건축조례 제7조①1다 [시행 2026.3.30.]', conf:'A',
+  memo:'서울: 심의대상건축물(다중이용건축물·시가지/특화경관지구 내·분양 목적) 중 연면적 합계 10만㎡ 이상 또는 21층 이상 → 시 건축위원회. 다른 시·도는 건축조례로 확인(21층·10만㎡ 이상은 시행령 제8조 광역 허가·도지사 승인 대상).',
+  fn: c => {
+    const big = c.floors>=21 || c.gfa>=100000;
+    const why = [c.floors>=21?`지상 ${c.floors}층 ≥ 21층`:'', c.gfa>=100000?`연면적 ${fA(c.gfa)} ≥ 100,000.00㎡`:''].filter(Boolean).join(', ');
+    if (!big) return N(`지상 ${c.floors}층 < 21층, 연면적 ${fA(c.gfa)} < 100,000.00㎡`);
+    if (c.isSeoul) return c.bcTarget ? Y(`${why} · ${c.bcTargetWhy}`) : Q(`${why} — 심의대상건축물(다중이용·분양·경관지구) 여부 확인`);
+    return Y(`${why} — ${c.sido} 건축조례로 심의 주체 확인`);
+  }},
+ {id:'bc_local', cat:'심의', name:'건축위원회 심의 (시·군·구)', law:'서울시 건축조례 제7조①2다 [시행 2026.3.30.] · 각 시·군·구 건축조례', conf:'A',
+  memo:'서울 구 위원회: 심의대상건축물 중 시 위원회 대상이 아닌 것. 분양 목적이면 연면적 합계 3,000㎡ 이상, 공동주택 30세대(단지형 50세대) 이상, 오피스텔 50실 이상. 다른 시·도는 조례 확인.',
+  fn: (c,V) => {
+    if (V.bc_metro.s==='Y') return N('시·도 건축위원회 심의 대상');
+    if (c.multi) return Y(c.floors>=16 ? `다중이용건축물: 지상 ${c.floors}층 ≥ 16층` : `다중이용건축물: ${USES[c.use]} 연면적 ${fA(c.gfa)} ≥ 5,000.00㎡`);
+    if (c.isSeoul) {
+      if (c.f.scenic) return Y('시가지·특화경관지구 내 건축물(입력)');
+      if (c.sale) {
+        if (c.res && c.hh>=30) return Y(`분양 공동주택 ${c.hh}세대 ≥ 30세대`);
+        if (c.use==='officetel' && c.hh>=50) return Y(`분양 오피스텔 ${c.hh}실 ≥ 50실`);
+        if (c.gfa>=3000) return Y(`분양 목적 연면적 ${fA(c.gfa)} ≥ 3,000.00㎡`);
+      }
+      return N('서울 건축조례 심의대상 기준 미만');
+    }
+    if (c.res && c.hh>=30) return Q(`공동주택 심의 대상 여부 — ${c.sido} 건축조례 확인`);
+    return N('다중이용건축물 아님 — 조례 확인 권장');
+  }},
+ {id:'excav', cat:'심의', name:'굴토 심의', law:'서울시 건축조례 제7조①1사·2라 [시행 2026.3.30.]', conf:'A',
+  memo:'서울: 깊이 10m 이상 또는 지하 2층 이상 굴착, 높이 5m 이상 옹벽 설치 공사 설계(석축·노후건축물 인접 등 추가 요건 있음). 건축법 시행령 제5조의5에서는 해당 호가 삭제되어 조례로 운영 — 다른 시·도는 조례 확인.',
+  fn: c => {
+    const hit = c.depth>=10 || c.basements>=2;
+    if (!hit) return N(`굴착깊이 ${f1(c.depth)}m < 10m, 지하 ${c.basements}층 < 2층`);
+    const why = `굴착깊이 ${f1(c.depth)}m${c.depthEst?'(추정)':''}, 지하 ${c.basements}층`;
+    return c.isSeoul ? Y(why) : Q(`${why} — ${c.sido} 건축조례 확인`);
+  }},
+ {id:'struct', cat:'심의', name:'구조안전 심의', law:'건축법 시행령 제5조의5①4호, 제2조17호·18호 [시행 2026.10.6.]', conf:'A',
+  memo:'다중이용건축물(16층 이상, 또는 문화집회·종교·판매·여객·종합병원·관광숙박 바닥면적 합계 5,000㎡ 이상)과 특수구조 건축물의 구조안전 — 착공신고 전 지방건축위원회 심의.',
+  fn: c => c.f.special ? Y('특수구조 건축물(입력)') : c.multi ? Y(c.floors>=16 ? `다중이용건축물: 지상 ${c.floors}층 ≥ 16층` : `다중이용건축물: ${USES[c.use]} ≥ 5,000.00㎡`) : N('다중이용·특수구조 건축물 아님')},
+ {id:'landscape', cat:'심의', name:'경관심의 (건축물)', law:'경관법 제28조 · 서울시 경관조례 제24조 [시행 2025.9.29.]', conf:'A',
+  memo:'서울: ①경관지구 내 4층 또는 16m 초과·건폐율 40% 초과 ②중점경관관리구역 내 경관계획이 정한 건축물 ③지자체·공공기관·지방공기업이 짓는 허가(협의) 대상 ④다중이용건축물(16층 이상 등). 주택건설사업 등 개발사업 경관심의(경관법 제27조)는 원문 미대조.',
+  fn: c => {
+    if (c.isSeoul) {
+      if (c.f.scenic) return Y('경관지구·중점경관관리구역 내(입력) — 높이·건폐율 요건 확인');
+      if (c.pub) return Y('공공기관 등이 짓는 허가(협의) 대상 건축물');
+      if (c.multi) return Y(c.floors>=16 ? `다중이용건축물: 지상 ${c.floors}층 ≥ 16층` : `다중이용건축물: ${USES[c.use]} ≥ 5,000.00㎡`);
+      return N('서울 경관조례 제24조 기준 미해당');
+    }
+    if (c.f.scenic) return Y('경관지구·중점경관관리구역 내(입력)');
+    return (c.multi || c.pub) ? Q(`${c.sido} 경관조례 기준 확인`) : N('일반적 기준 미만 — 조례 확인 권장');
+  }},
+ {id:'traffic', cat:'영향평가', name:'교통영향평가', law:'도시교통정비 촉진법 시행령 [별표1] (2024.2.6. 개정) · 서울시 교통영향평가에 관한 조례 [별표] (2024.3.26. 개정)', conf:'A',
+  memo:'법령(도시교통정비지역): 공동주택 60,000㎡, 일반업무 25,000㎡, 숙박 40,000㎡, 상점 11,000㎡, 제2종 근생 15,000㎡, 문화집회 15,000㎡, 정비사업 부지 5만㎡. 서울 조례: 아파트 50,000㎡, 일반업무 20,000㎡, 숙박 20,000㎡, 상점 7,000㎡, 제2종 근생 8,000㎡, 문화집회 8,000㎡, 정비사업 부지 2.5만㎡(서울형 정비지원계획 5만㎡), 부설주차장 설치제한지역 3,000㎡ 이상(주택·오피스텔 제외). 복합용도: Σ(용도별 연면적÷기준)×10,000 ≥ 10,000.',
+  fn: c => {
+    const S = c.isSeoul;
+    const redevA = S ? 25000 : 50000;
+    if (c.type==='redev' && c.area>=redevA) return Y(`${S?'서울 조례: ':''}정비사업 부지면적 ${fA(c.area)} ≥ ${redevA.toLocaleString('ko-KR')}.00㎡`);
+    const TH = S ? { apt:50000, officetel:20000, retail:7000, hotel:20000, culture:8000, nonres:8000 } : { apt:60000, officetel:25000, retail:11000, hotel:40000, culture:15000, nonres:15000 };
+    const tag = S ? '서울 조례: ' : '';
+    if (c.use==='mixed') {
+      const rg = c.gfa*c.resRatio/100, ng = c.gfa - rg;
+      const swa = (rg/TH.apt + ng/TH.nonres) * 10000;
+      const why = `${tag}복합용도 Swa = (주택 ${fA(rg)}÷${TH.apt.toLocaleString('ko-KR')} + 비주거 ${fA(ng)}÷${TH.nonres.toLocaleString('ko-KR')})×10,000 = ${f1(swa)}`;
+      return swa>=10000 ? Y(why+' ≥ 10,000 (비주거는 제2종 근생 기준 가정)') : N(why+' < 10,000');
+    }
+    if (TH[c.use]) {
+      const ok = c.gfa >= TH[c.use];
+      const why = `${tag}${USES[c.use]} 연면적 ${fA(c.gfa)} ${ok?'≥':'<'} ${TH[c.use].toLocaleString('ko-KR')}.00㎡`;
+      if (ok) return Y(why);
+      if (S && c.use!=='officetel' && c.use!=='apt' && c.gfa>=3000) return Q(why+' — 부설주차장 설치제한지역이면 3,000㎡ 이상 대상(조례 제3조2호)');
+      return N(why);
+    }
+    if (S && c.gfa>=3000) return Q(`${USES[c.use]} — 조례 별표 용도별 기준·부설주차장 설치제한지역 여부 확인`);
+    return c.gfa>=10000 ? Q(`${USES[c.use]} — 별표1 용도별 기준 확인`) : N('용도별 기준 미만으로 추정 — 별표 확인 권장');
+  }},
+ {id:'env', cat:'영향평가', name:'환경영향평가', law:'환경영향평가법 시행령 [별표3] · 서울시 환경영향평가 조례 [별표1] (2024.9.30. 개정)', conf:'A',
+  memo:'법령: 정비사업·주택건설사업 사업면적 30만㎡ 이상(서울 조례 상한으로 간접 확인). 서울 조례: 건축물 연면적 합계 10만㎡ 이상, 정비사업·주택건설사업(대지조성 포함) 사업면적 9만㎡ 이상 30만㎡ 미만.',
+  fn: c => {
+    if (c.area>=300000 && c.path!=='permit') return Y(`사업면적 ${fA(c.area)} ≥ 300,000.00㎡`);
+    if (c.isSeoul) {
+      if (c.gfa>=100000) return Y(`서울 조례: 연면적 ${fA(c.gfa)} ≥ 100,000.00㎡`);
+      if (c.path!=='permit' && c.area>=90000) return Y(`서울 조례: ${c.path==='redev'?'정비사업':'주택건설사업'} 사업면적 ${fA(c.area)} ≥ 90,000.00㎡`);
+      return N('서울 조례 기준 미만');
+    }
+    if (c.gfa>=100000 || c.area>=90000) return Q(`${c.sido} 환경영향평가 조례 확인`);
+    return N('법령 기준(300,000.00㎡) 미만');
+  }},
+ {id:'senv', cat:'영향평가', name:'소규모 환경영향평가', law:'환경영향평가법 시행령 [별표4] (2025.10.1. 개정) [시행 2026.9.18.]', conf:'A',
+  memo:'도시지역: 지구단위계획·기반시설 계획 등에 따라 시행하는 사업으로 사업계획 면적 6만㎡(녹지지역 1만㎡) 이상. 관리지역: 보전 5,000㎡, 생산 7,500㎡, 계획 10,000㎡. 농림지역 7,500㎡. 자연환경보전지역 5,000㎡.',
+  fn: (c,V) => {
+    if (V.env.s==='Y') return N('환경영향평가 대상');
+    const NU = { mc:5000, mpr:7500, mp:10000, ag:7500, ne:5000 };
+    if (!c.urban) { const t = NU[c.zone]; return c.area>=t ? Y(`${c.zoneName} 사업면적 ${fA(c.area)} ≥ ${t.toLocaleString('ko-KR')}.00㎡`) : N(`${c.zoneName} 사업면적 ${fA(c.area)} < ${t.toLocaleString('ko-KR')}.00㎡`); }
+    const lim = c.green ? 10000 : 60000;
+    if (c.area < lim) return N(`도시지역 사업면적 ${fA(c.area)} < ${lim.toLocaleString('ko-KR')}.00㎡`);
+    if (c.f.dup || c.f.station) return Y(`지구단위계획에 따른 사업 ${fA(c.area)} ≥ ${lim.toLocaleString('ko-KR')}.00㎡`);
+    return Q(`사업면적 ${fA(c.area)} ≥ ${lim.toLocaleString('ko-KR')}.00㎡ — 지구단위계획·기반시설 계획에 따른 사업인지 확인`);
+  }},
+ {id:'edu', cat:'영향평가', name:'교육환경평가', law:'교육환경 보호에 관한 법률 제6조①, 제8조 [시행 2026.6.3.]', conf:'A',
+  memo:'①4호: 학교·교육환경보호구역이 정비구역으로 지정된 정비사업. ①5호: 교육환경보호구역(학교경계 200m)에서 건축법 제11조①단서 규모(21층 이상 또는 연면적 합계 10만㎡ 이상). ①3호: 학교용지 확보 특례법 제3조①의 개발사업시행자(300세대 이상 등 — 해당 여부 확인).',
+  fn: c => {
+    if (c.f.school) {
+      if (c.type==='redev') return Y('교육환경보호구역 내 정비사업');
+      if (c.floors>=21||c.gfa>=100000) return Y(`보호구역 내 ${c.floors>=21?`지상 ${c.floors}층 ≥ 21층`:`연면적 ${fA(c.gfa)} ≥ 100,000.00㎡`}`);
+    }
+    if (c.res && c.hh>=300 && c.path!=='permit') return Q(`${c.hh}세대 — 학교용지 확보 특례법 개발사업 해당 여부 확인`);
+    return N(c.f.school ? '보호구역 내이나 규모 기준 미만' : '학교 경계 200m 밖(입력)');
+  }},
+ {id:'disaster', cat:'영향평가', name:'재해영향평가 등의 협의', law:'자연재해대책법 시행령 제6조 [별표1] (2025.9.23. 개정) [시행 2026.9.24.]', conf:'A',
+  memo:'개발사업 부지면적 5,000㎡ 이상(또는 길이 2km 이상). 주택법 사업계획승인, 도시정비법 사업시행인가(재개발사업만), 도시개발사업 등이 대상. 국토계획법 개발행위허가는 시행령 제55조① 용도지역별 허가 규모를 넘는 경우만. 자연재해위험개선지구 등에 포함되면 규모와 관계없이 대상.',
+  fn: c => {
+    if (c.type==='redev' && c.redevKind==='rebuild' && !c.f.dup && !c.f.station) return N('재건축사업 — 별표1 대상 개발사업 아님(재개발만 해당)');
+    if (c.path!=='permit' || c.f.dup || c.f.station) return c.area>=5000 ? Y(`사업면적 ${fA(c.area)} ≥ 5,000.00㎡`) : N(`사업면적 ${fA(c.area)} < 5,000.00㎡`);
+    const DAL = { res:10000, semi:10000, com:10000, comd:10000, ind:30000, green:10000 };
+    const t = c.urban ? DAL[c.zk] : (c.zone==='mp' ? 30000 : 5000);
+    return c.area>t ? Q(`건축허가 — 대지 ${fA(c.area)} > 개발행위허가 규모 ${t.toLocaleString('ko-KR')}㎡(국토계획법 시행령 제55조, 원문 미대조) 해당 여부 확인`) : N('건축허가 — 개발행위허가 규모 이내로 추정');
+  }},
+ {id:'ugs', cat:'영향평가', name:'지하안전평가', law:'지하안전관리에 관한 특별법 시행령 제13조 [시행 2026.2.1.]', conf:'A',
+  memo:'굴착깊이 20m 이상 굴착공사 수반 사업. 최대 굴착깊이 기준, 집수정·E/V 피트·정화조 굴착부분 제외.',
+  fn: c => c.depth>=20 ? Y(`굴착깊이 ${f1(c.depth)}m${c.depthEst?'(추정)':''} ≥ 20m`) : N(`굴착깊이 ${f1(c.depth)}m < 20m`)},
+ {id:'ugs_s', cat:'영향평가', name:'소규모 지하안전평가', law:'지하안전관리에 관한 특별법 시행령 제23조 [시행 2026.2.1.]', conf:'A',
+  memo:'굴착깊이 10m 이상 20m 미만 굴착공사를 수반하는 사업으로서 별표1에서 정하는 사업.',
+  fn: c => (c.depth>=10 && c.depth<20) ? Y(`굴착깊이 ${f1(c.depth)}m${c.depthEst?'(추정)':''} (10m 이상 20m 미만)`) : N(c.depth>=20 ? '지하안전평가 대상' : `굴착깊이 ${f1(c.depth)}m < 10m`)},
+ {id:'safety', cat:'안전·재난', name:'건축물 안전영향평가', law:'건축법 제13조의2, 시행령 제10조의3 [시행 2026.10.6.]', conf:'A',
+  memo:'초고층 건축물, 또는 연면적(한 대지에 여러 동이면 동별) 10만㎡ 이상이면서 16층 이상. 건축허가 신청 전.',
+  fn: c => {
+    if (c.floors>=50||c.height>=200) return Y('초고층 건축물(50층 또는 200m 이상)');
+    return (c.maxBld>=100000 && c.floors>=16) ? Y(`동 연면적 ${fA(c.maxBld)} ≥ 100,000.00㎡ 이면서 ${c.floors}층 ≥ 16층`) : N(`동 연면적 ${fA(c.maxBld)}, ${c.floors}층 — 기준 미만`);
+  }},
+ {id:'fire', cat:'안전·재난', name:'성능위주설계', law:'소방시설법 시행령 제9조 [시행 2026.10.2.]', conf:'A',
+  memo:'신축: 연면적 20만㎡ 이상(아파트등 제외), 아파트등 50층(지하 제외) 또는 200m 이상, 아파트등 외 30층(지하 포함) 또는 120m 이상, 철도·공항 3만㎡, 창고 10만㎡, 영화관 10개, 지하연계 복합건축물 등.',
+  fn: c => {
+    if (c.use==='apt') return (c.floors>=50||c.height>=200) ? Y(`아파트 ${c.floors>=50?`${c.floors}층 ≥ 50층`:`높이 ${f1(c.height)}m ≥ 200m`}`) : N(`아파트 ${c.floors}층·${f1(c.height)}m — 50층·200m 미만`);
+    if (c.floors>=50||c.height>=200) return Y('50층 또는 200m 이상');
+    if (c.gfa>=200000) return Y(`연면적 ${fA(c.gfa)} ≥ 200,000.00㎡`);
+    if (c.floors+c.basements>=30||c.height>=120) return c.use==='mixed' ? Q('주상복합 — 아파트등 부분 구분 확인 (30층·120m 기준)') : Y(`${c.floors+c.basements}층(지하 포함) 또는 ${f1(c.height)}m — 30층·120m 이상`);
+    if (c.f.subway) return Q('지하연계 복합건축물 정의(초고층재난법 제2조) 해당 여부 확인');
+    return N('기준 미만');
+  }},
+ {id:'predis', cat:'안전·재난', name:'사전재난영향성 검토', law:'초고층재난법 제6조, 시행령 제2조 [시행 2026.7.1.]', conf:'A',
+  memo:'초고층(50층 또는 200m 이상), 지하연계 복합건축물(11층 이상 또는 수용인원 5천명 이상 + 지하역사·지하도상가 연결 등 — 시행령 제2조 제외요건 있음).',
+  fn: c => (c.floors>=50||c.height>=200) ? Y('초고층 건축물') : c.f.subway ? Q('지하연계 복합건축물 요건(층수·수용인원·용도·연결 방식) 확인') : N('기준 미만')},
+ {id:'energy', cat:'인증·성능', name:'에너지절약계획서', law:'녹색건축법 시행령 제10조 [시행 2026.3.31.]', conf:'A',
+  memo:'연면적 합계 500㎡ 이상(단독주택 등 제외) — 건축허가 신청 시 제출.',
+  fn: c => c.gfa>=500 ? Y(`연면적 ${fA(c.gfa)} ≥ 500.00㎡`) : N('500㎡ 미만')},
+ {id:'zeb', cat:'인증·성능', name:'제로에너지건축물 기준', law:'녹색건축법 제17조, 시행령 제12조 [시행 2026.3.31.] · 에너지절약설계기준', conf:'B',
+  memo:'공공: 시행령 제12조④1 — 1,000㎡ 이상 ZEB 인증 4등급(원문 확인). 민간: 2025.6.30~ 30세대 이상 공동주택·연면적 1,000㎡ 이상 ZEB 5등급 수준 설계(설계기준 고시 — 원문 미대조).',
+  fn: c => {
+    if (c.pub) return c.gfa>=1000 ? Y('공공 1,000㎡ 이상 — ZEB 인증 4등급 이상') : N('공공 1,000㎡ 미만');
+    if (c.res && c.hh>=30 && c.path!=='permit') return Y('민간 30세대 이상 공동주택 — ZEB 5등급 수준 설계');
+    return c.gfa>=1000 ? Y('민간 1,000㎡ 이상 — ZEB 5등급 수준 설계') : N('1,000㎡ 미만');
+  }},
+ {id:'longlife', cat:'인증·성능', name:'장수명주택 인증', law:'주택법 제38조③, 주택건설기준 등에 관한 규정 제65조의2 [시행 2026.9.8.]', conf:'A',
+  memo:'1,000세대 이상 주택 공급 시 일반등급 이상. 우수등급 이상이면 건폐율·용적률 완화 가능.',
+  fn: c => {
+    if (!c.res || c.hh<1000) return N(`${c.hh}세대 < 1,000세대`);
+    return c.path==='housing' ? Y(`${c.hh}세대 ≥ 1,000세대`) : Q(`${c.hh}세대 — ${c.path==='redev'?'정비사업':'건축허가'} 적용 여부 확인`);
+  }},
+ {id:'perf', cat:'인증·성능', name:'공동주택성능등급 표시', law:'주택법 제39조, 주택건설기준 등에 관한 규정 제58조 [시행 2026.9.8.]', conf:'A',
+  memo:'500세대 이상 공동주택 공급 시 입주자 모집공고에 성능등급 표시.',
+  fn: c => (c.res && c.hh>=500 && c.path!=='permit') ? Y(`${c.hh}세대 ≥ 500세대`) : N(c.res ? `${c.hh}세대 < 500세대 또는 건축허가` : '주택 없음')},
+ {id:'cpted', cat:'인증·성능', name:'범죄예방 건축기준', law:'건축법 제53조의2, 시행령 제63조의7 [시행 2026.10.6.]', conf:'A',
+  memo:'다가구·아파트·연립·다세대, 제1종 근생 소매점, 제2종 근생 다중생활시설, 문화·집회, 교육연구, 노유자, 수련, 오피스텔, 숙박 중 다중생활시설.',
+  fn: c => c.res ? Y('공동주택') : c.use==='officetel' ? Y('업무시설 중 오피스텔') : c.use==='retail' ? Q('제1종 근생 소매점이면 대상') : c.use==='hotel' ? Q('다중생활시설이면 대상 (관광숙박 등은 제외)') : c.use==='culture' ? Q('문화·집회 시설이면 대상') : N('적용 용도 아님')},
+ {id:'floor', cat:'인증·성능', name:'바닥충격음 성능검사', law:'주택법 제41조의2⑤ [시행 2026.9.8.]', conf:'A',
+  memo:'사업계획승인을 받아 시행하는 주택건설사업 — 사용검사 전 성능검사, 결과 제출.',
+  fn: c => (c.res && c.path==='housing') ? Y('사업계획승인 주택건설사업') : (c.res && c.path==='redev') ? Q('정비사업 공동주택 — 적용 확인') : N('해당 없음')},
+ {id:'pub_green', cat:'인증·성능', name:'녹색건축 인증 (공공)', law:'녹색건축법 시행령 제11조의3 [시행 2026.3.31.]', conf:'A',
+  memo:'공공기관·교육감 소유·관리, 신축 등, 연면적 합계 3,000㎡ 이상, 에너지절약계획서 제출 대상.',
+  fn: c => c.pub ? (c.gfa>=3000 ? Y(`공공 연면적 ${fA(c.gfa)} ≥ 3,000.00㎡`) : N('3,000㎡ 미만')) : N('민간 사업')},
+ {id:'bf', cat:'인증·성능', name:'BF(장애물 없는 생활환경) 인증', law:'장애인등편의법 제10조의2, 시행령 제5조의2 [별표2의2] (2024.5.7. 개정)', conf:'A',
+  memo:'국가·지자체·공공기관이 짓는 근생, 문화·집회, 종교, 판매, 의료, 교육연구, 노유자, 수련, 운동, 업무(오피스텔 포함), 숙박(30실 이상) 등. 공동주택은 별표2의2에 없음 — 별표2의3·사업별 기준 확인.',
+  fn: c => !c.pub ? N('민간 사업') : c.res ? Q('공공 공동주택 — 별표2의2 미포함, 별표2의3·사업 기준 확인') : Y(`공공 ${USES[c.use]} — 별표2의2 대상 용도`)},
+ {id:'heritage', cat:'문화유산', name:'매장유산 유존지역 확인', law:'매장유산법 제6조의2·제7조 (2024.2.13. 개정) [시행 2026.10.29.]', conf:'A',
+  memo:'사업시행자의 지표조사 의무(사업면적 3만㎡ 이상)는 2024.2.13. 개정으로 삭제. 현재는 국가·지자체가 지표조사를 하고 보고서로 유존지역을 정함(시행령 제3조). 사업지가 유존지역이면 발굴조사 등 협의 필요.',
+  fn: c => c.area>=30000 ? Q(`사업면적 ${fA(c.area)} — 매장유산 유존지역(지표조사 보고서·문화유적분포지도) 해당 여부 확인`) : N('소규모 사업 — 유존지역이면 별도 협의')},
+ {id:'heritage2', cat:'문화유산', name:'국가유산 현상변경 허가', law:'국가유산기본법·문화유산법(역사문화환경 보존지역)', conf:'C',
+  memo:'보존지역(고시 범위 확인) 안 건설행위 — 허용기준 검토.',
+  fn: c => c.f.heritage ? Q('국가유산 주변(입력) — 보존지역·허용기준 확인') : N('입력 없음')}
+];
+const RULE = Object.fromEntries(RULES.map(r => [r.id, r]));
+const FIELD_LABEL = { gfa:'연면적', maxBld:'동 연면적', floors:'지상층수', basements:'지하층수', depth:'굴착깊이', hh:'세대수', height:'최고높이', resRatio:'주택비율', area:'사업면적', site:'대지면적', owner:'사업 주체', school:'학교 200m 이내', subway:'지하역사 연결', heritage:'국가유산 주변', scenic:'경관지구', dup:'지구단위계획 변경', sale:'분양 목적' };
+// 판정에 쓰는 입력값. 이 값이 "확인 필요"이면 비대상 판정을 확인 필요로 바꾼다
+const NEEDS = { hap:['hh','resRatio'], bc_metro:['floors','gfa'], bc_local:['floors','gfa','hh'], excav:['basements','depth'], struct:['floors'],
+  landscape:['floors','gfa','owner','scenic'], traffic:['gfa','resRatio'], env:['gfa'], edu:['school','floors','gfa','hh'], ugs:['basements','depth'], ugs_s:['basements','depth'],
+  safety:['maxBld','gfa','floors'], fire:['floors','gfa','subway'], predis:['floors','subway'], energy:['gfa'], zeb:['gfa','hh','owner'], longlife:['hh'], perf:['hh'],
+  pub_green:['owner'], bf:['owner'], heritage2:['heritage'] };
+
+/* ---------- 판정 ---------- */
+function derive(inp){
+  const z = ZONES.find(z => z[0]===inp.zone) || ZONES[4];
+  const n = k => Math.max(0, +inp[k] || 0);
+  const basements = n('basements'), floors = n('floors'), depthIn = n('depth');
+  const depth = depthIn>0 ? depthIn : (basements ? +(basements*3.6+1.5).toFixed(1) : 0);
+  const rr = inp.resRatio==='' || inp.resRatio==null ? 100 : n('resRatio');
+  const c = { ...inp, zoneName:z[1], zk:z[2], urban:z[2]!=='nonurban', green:z[2]==='green', isSeoul:inp.sido==='서울특별시',
+    redevKind: inp.redevKind||'redevelop', site:n('site'), area:n('area')||n('site'), gfa:n('gfa'), maxBld:n('maxBld')||n('gfa'), floors, basements, height:n('height'),
+    depth, depthEst:!(depthIn>0), hh:Math.round(n('hh')), resRatio:rr, res:inp.use==='apt'||inp.use==='mixed', pub:inp.owner==='public', f:inp.flags||{} };
+  c.multi = floors>=16 || (['retail','hotel','culture'].includes(c.use) && c.gfa>=5000);
+  c.sale = !!c.f.sale || (c.res && !c.pub);
+  c.bcTarget = c.multi || !!c.f.scenic || c.sale;
+  c.bcTargetWhy = c.multi ? '다중이용건축물' : c.f.scenic ? '경관지구 내 건축물' : '분양 목적 건축물';
+  c.unk = inp.unk || {};
+  c.buildEst = !!(c.unk.floors || c.unk.basements);
+  c.buildMonths = c.buildEst ? 36 : Math.max(8, Math.round(12 + 0.75*floors + 1.5*basements));
+  return c;
+}
+function judge(inp){
+  const c = derive(inp), V = {};
+  V.hap = RULE.hap.fn(c, V);
+  c.path = inp.type==='redev' ? 'redev' : (V.hap.s==='Y' ? 'housing' : 'permit');
+  for (const r of RULES) if (r.id!=='hap') V[r.id] = r.fn(c, V);
+  for (const id in NEEDS) {
+    if (!V[id] || V[id].s!=='N') continue;
+    if (id==='hap' && c.type==='redev') continue;
+    // 굴착깊이는 지하층수로 추정할 수 있으므로 둘 다 확인 필요일 때만 보정
+    const miss = NEEDS[id].filter(k => c.unk[k] && !(k==='depth' && !c.unk.basements) && !(k==='basements' && !c.unk.depth) && !(k==='maxBld' && !c.unk.gfa));
+    if (miss.length) V[id] = Q(`확인 필요 입력값: ${[...new Set(miss.map(k => FIELD_LABEL[k]||k))].join('·')} — 현재 입력 기준으로는 "${V[id].r}"`);
+  }
+  return { c, V };
+}
+function effective(p){
+  const { c, V } = judge(p.input), E = {};
+  for (const r of RULES) E[r.id] = (p.overrides||{})[r.id] || V[r.id].s;
+  return { c, V, E };
+}
+
+/* ---------- 일정 생성 ---------- */
+function buildRows(c, E){
+  const rows = [];
+  const has = id => E[id]==='Y' || E[id]==='Q', tent = id => E[id]==='Q';
+  const add = (id, cat, name, dur, deps, o={}) => rows.push({ id, cat, name, dur, start:0,
+    deps: deps.filter(d => rows.some(r => r.id===d)), owner:o.owner||'', note:o.note||'', ms:!!o.ms, tent:!!o.tent, rule:o.rule||null, color:'' });
+  const P = c.path;
+  add('s1','plan', P==='redev' ? '기획·정비계획(안) 작성' : '기획·계획설계', 3, [], {owner:'설계'});
+  let pre = 's1';
+  if (P!=='redev' && has('dup')) {
+    add('u1','urban','지구단위계획 입안(변경)',3,['s1'],{rule:'dup'});
+    add('u2','urban','주민열람·관계기관 협의',2,['u1'],{rule:'dup'});
+    add('u3','urban','도시·건축공동위원회 심의',2,['u2'],{rule:'dup'});
+    add('u4','urban','지구단위계획 결정 고시',0,['u3'],{ms:true,rule:'dup'});
+    pre = 'u4';
+  }
+  if (P==='redev') {
+    add('j1','redev','정비계획 수립·정비구역 지정',12,['s1'],{note:'도시계획위원회 심의 포함', owner:'조합·구청'});
+    add('j2','redev','조합설립 인가',6,['j1'],{owner:'조합'});
+    pre = 'j2';
+  }
+  add('s2','plan', P==='redev' ? '건축설계 (사업시행계획 도서)' : '중간설계 (심의도서)', P==='redev' ? 6 : 4, [pre], {owner:'설계'});
+  const A = (rid, id, name, dur, deps) => { if (has(rid)) add(id,'assess',name,dur,deps,{rule:rid,tent:tent(rid)}); };
+  A('heritage','a_her','매장유산 유존지역 확인',1,['s1']);
+  A('traffic','a_tr','교통영향평가',4,[pre]);
+  A('env','a_env','환경영향평가 (초안·본안 협의)',10,[pre]);
+  A('senv','a_senv','소규모 환경영향평가',3,[pre]);
+  A('disaster','a_dis','재해영향평가 등의 협의',3,[pre]);
+  A('edu','a_edu','교육환경평가',4,[pre]);
+  A('ugs','a_ugs','지하안전평가',4,[pre]);
+  A('ugs_s','a_ugss','소규모 지하안전평가',2,[pre]);
+  A('heritage2','a_her2','국가유산 현상변경 허가',3,[pre]);
+  if (P!=='permit' && has('fire')) add('a_fire','assess','성능위주설계 도서 작성',2,[pre],{rule:'fire',tent:tent('fire')});
+  let rev;
+  if (P==='housing' || P==='redev') {
+    const H = P==='housing';
+    const inner = ['건축', has('landscape')&&'경관', has('traffic')&&'교통', has('excav')&&'굴토', H&&has('dup')&&'도시계획', has('edu')&&'교육환경', has('disaster')&&'재해', has('fire')&&'성능위주', P==='redev'&&has('env')&&'환경'].filter(Boolean).join('·');
+    add('r_int','review',`통합심의 (${inner})`,3, ['s2','a_tr','a_edu','a_dis','a_fire'].concat(H ? [] : ['a_env']),{rule:'integ', note: P==='redev'?'도시정비법 제50조의2':'주택법 제18조'});
+    rev = 'r_int';
+  } else {
+    let last = 's2';
+    if (has('landscape')) { add('r_land','review','경관심의',1,['s2'],{rule:'landscape',tent:tent('landscape')}); last = 'r_land'; }
+    const bc = has('bc_metro') ? 'bc_metro' : has('bc_local') ? 'bc_local' : null;
+    if (bc || has('excav')) {
+      const nm = bc ? (bc==='bc_metro' ? '시·도 건축위원회 심의' : '시·군·구 건축위원회 심의') + (has('excav') ? ' (건축·구조·굴토)' : '') : '굴토 심의';
+      add('r_bc','review',nm,2,[last,'a_tr'],{rule:bc||'excav', tent:tent(bc||'excav')});
+      last = 'r_bc';
+    }
+    rev = last;
+  }
+  const pp = [];
+  const B = (rid, id, name, dur, cat='permit') => { if (has(rid)) { add(id,cat,name,dur,[rev],{rule:rid,tent:tent(rid)}); pp.push(id); } };
+  B('safety','p_safe','건축물 안전영향평가',2);
+  if (P==='permit') B('fire','p_fire','성능위주설계 평가',2);
+  B('predis','p_pre','사전재난영향성 검토 협의',2);
+  B('longlife','c_long','장수명주택 인증',2,'cert');
+  const mainName = P==='housing' ? '주택건설사업계획승인' : P==='redev' ? '사업시행계획인가' : '건축허가';
+  add('p_main','permit',mainName, P==='redev' ? 3 : 2, [rev,...pp,'a_env','a_senv','a_dis','a_edu','a_ugs','a_ugss','a_her','a_her2'], {owner:'인허가', rule: P==='housing'?'hap':null});
+  const subs = ['energy','zeb'].filter(has).map(id => RULE[id].name);
+  if (subs.length) add('c_sub','cert',`신청 시 제출: ${subs.join('·')}`,0,[rev],{ms:true, rule:'energy'});
+  add('s3','plan','실시설계',4,[P==='redev' ? 'p_main' : rev],{owner:'설계'});
+  let sd = ['p_main','s3'];
+  if (P==='redev') {
+    add('j4','redev','관리처분계획 인가',8,['p_main'],{owner:'조합'});
+    add('j5','redev','이주·철거',12,['j4'],{owner:'조합'});
+    sd = ['j5','s3'];
+  }
+  add('b0','build','착공 (착공신고)',0,sd,{ms:true});
+  if (has('perf')) add('c_perf','cert','입주자모집 · 주택성능등급 표시',0,['b0'],{ms:true,rule:'perf',tent:tent('perf')});
+  add('b1','build','공사',c.buildMonths,['b0'],{owner:'시공', tent:c.buildEst, note: c.buildEst ? '층수 확인 필요 — 임시값 36개월' : `추정: 12 + 0.75×지상 ${c.floors}층 + 1.5×지하 ${c.basements}층 ≈ ${c.buildMonths}개월`});
+  if (has('floor')) add('c_floor','cert','바닥충격음 성능검사',1,['b1'],{rule:'floor', tent:tent('floor')});
+  add('b2','build', P==='permit' ? '사용승인' : '사용검사 (준공)', 1, ['b1','c_floor']);
+  propagate(rows, true);
+  return rows;
+}
+const endOf = r => r.start + (r.ms ? 0 : r.dur);
+function propagate(rows, reset){
+  const m = new Map(rows.map(r => [r.id, r]));
+  const order = topo(rows);
+  for (const r of order) {
+    const ds = r.deps.map(d => m.get(d)).filter(Boolean);
+    const need = ds.length ? Math.max(...ds.map(endOf)) : 0;
+    r.start = reset ? need : Math.max(r.start, need);
+  }
+}
+function topo(rows){
+  const m = new Map(rows.map(r => [r.id, r])), seen = new Set(), out = [];
+  const visit = (r, stack) => { if (seen.has(r.id) || stack.has(r.id)) return; stack.add(r.id);
+    r.deps.forEach(d => m.get(d) && visit(m.get(d), stack)); stack.delete(r.id); seen.add(r.id); out.push(r); };
+  rows.forEach(r => visit(r, new Set()));
+  return out;
+}
+
+/* ---------- 프로젝트 ---------- */
+const uid = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const nowYM = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; };
+function defaultInput(example){
+  return example ? { name:'예시 · 3종일반주거 공동주택', sido:'서울특별시', sgg:'', type:'housing', owner:'private', zone:'r3', use:'apt',
+      site:'12000', area:'', gfa:'85000', maxBld:'', floors:'29', basements:'3', height:'95', depth:'', hh:'620', resRatio:'',
+      flags:{ school:true } }
+    : { name:'새 프로젝트', sido:'서울특별시', sgg:'', type:'housing', owner:'private', zone:'r3', use:'apt',
+      site:'', area:'', gfa:'', maxBld:'', floors:'', basements:'', height:'', depth:'', hh:'', resRatio:'', flags:{} };
+}
+function makeProject(example){
+  const p = { id:uid(), example:!!example, input:defaultInput(example), overrides:{}, rows:[], updatedAt:Date.now(),
+    settings:{ px:56, axis:'ym', base:nowYM(), deps:'sel', palette:'navy', showOwner:true, showNote:false, todayLine:true } };
+  const { c, E } = effective(p);
+  p.rows = example ? buildRows(c, E) : [];
+  return p;
+}
+
+/* ---------- 저장 ---------- */
+const LS = 'permit-timeline.v1';
+const store = {
+  mode:'local', db:null, uid:null,
+  async init(){
+    try {
+      if (!window.claude || typeof window.claude.use !== 'function') return;
+      const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
+      if (!db || !user) return;
+      const id = await user.id();
+      if (!id) return;
+      this.db = db; this.uid = id; this.mode = 'cloud';
+    } catch(e) { this.mode = 'local'; }
+  },
+  col(){ return this.db.collection('data/users/' + this.uid); },
+  async list(){
+    if (this.mode==='cloud') { const s = await this.col().get(); return s.docs.map(d => d.data()).filter(Boolean).map(x => JSON.parse(JSON.stringify(x))); }
+    try { return JSON.parse(localStorage.getItem(LS) || '[]'); } catch(e) { return []; }
+  },
+  async put(p){
+    const body = JSON.parse(JSON.stringify(p));
+    if (this.mode==='cloud') return this.col().doc(p.id).set(body);
+    try { const all = await this.list(); const i = all.findIndex(x => x.id===p.id); if (i>=0) all[i] = body; else all.push(body); localStorage.setItem(LS, JSON.stringify(all)); } catch(e) {}
+  },
+  async del(id){
+    if (this.mode==='cloud') return this.col().doc(id).delete();
+    try { localStorage.setItem(LS, JSON.stringify((await this.list()).filter(x => x.id!==id))); } catch(e) {}
+  }
+};
+let saveTimer = null, saving = Promise.resolve(), dirtyIds = new Set();
+function setSave(t, cls){ const el = $('#saveSt'); el.className = 'save ' + (cls||''); el.querySelector('span').textContent = t; }
+function touch(){
+  const p = S.cur; if (!p) return;
+  p.updatedAt = Date.now(); p.example = false; dirtyIds.add(p.id);
+  setSave('저장 중', 'busy');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(flush, 1200);
+}
+function flush(){
+  const ids = [...dirtyIds]; dirtyIds.clear();
+  saving = saving.then(async () => {
+    try { for (const id of ids) { const p = S.projects.find(x => x.id===id); if (p) await store.put(p); }
+      setSave(store.mode==='cloud' ? '저장됨' : '이 브라우저에 저장됨', store.mode==='cloud' ? '' : 'local');
+    } catch(e) {
+      if (store.mode==='cloud' && e && e.code==='invalid_argument') {
+        // 보기 전용 권한 등으로 계정 저장이 막히면 이 브라우저 저장으로 전환
+        store.mode = 'local';
+        for (const p of S.projects) await store.put(p);
+        setSave('보기 권한 — 이 브라우저에 저장됨', 'local');
+        return;
+      }
+      setSave(e && e.code==='quota_exceeded' ? '저장 공간이 가득 찼습니다' : '저장 실패 — 다시 시도', 'busy'); ids.forEach(i => dirtyIds.add(i));
+    }
+  });
+}
+function showGuide(){
+  const local = store.mode!=='cloud';
+  const m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = `<div class="box guide" role="dialog" aria-modal="true" aria-labelledby="gTitle">
+    <h2 id="gTitle">인허가 타임라인 사용 안내</h2>
+    <ol>
+      <li><b>01 사업 개요</b>에 지역·용도지역·면적·층수·세대수와 특이사항을 넣습니다.</li>
+      <li><b>02 법령 판정</b>에서 심의·영향평가 대상 여부와 근거 조문을 확인하고, 필요하면 직접 지정합니다.</li>
+      <li><b>03 인허가 일정표</b>에서 자동으로 만든 막대를 끌어 고치고, Excel·PDF·이미지로 내보냅니다.</li>
+    </ol>
+    <div class="k2"><b>데이터 저장</b><span>${local
+      ? '입력한 내용은 <b>지금 쓰는 브라우저에만</b> 저장되고 서버로 보내지지 않습니다. 브라우저 기록을 지우거나 다른 PC에서 열면 보이지 않으니, <b>내보내기 → 데이터 백업(.json)</b>으로 보관하세요.'
+      : '입력한 내용은 내 claude.ai 계정 공간에 저장되며, 다른 사람에게는 보이지 않습니다.'}</span></div>
+    <div class="k2"><b>판정 기준표 v${RULESET.version} · ${RULESET.date} 확인</b><span>대부분 항목을 국가법령정보센터 현행 원문과 대조했고, 항목마다 신뢰도(원문 확인 / 해석례·2차 자료 / 확인 필요)를 표시했습니다. 법령은 계속 바뀌므로 사용 시점의 원문과 조례를 다시 확인하고, 관할 기관과 사전 협의하세요. <b>이 도구의 판정과 기간은 검토 보조용이며 법적 판단을 대신하지 않습니다.</b></span></div>
+    <div class="actions"><button class="btn pri" data-a="1">확인했습니다</button></div></div>`;
+  m.addEventListener('click', e => { if (e.target.closest('[data-a]') || e.target===m) { m.remove(); try { localStorage.setItem(LS+'.seen', RULESET.version); } catch(_) {} } });
+  document.body.appendChild(m); m.querySelector('[data-a]').focus();
+}
+
+/* ---------- 상태 · 되돌리기 ---------- */
+const S = { projects:[], cur:null, sel:null, tab:'gantt', hist:[], fut:[] };
+const $ = s => document.querySelector(s);
+const snapOf = p => JSON.stringify({ input:p.input, overrides:p.overrides, rows:p.rows, settings:p.settings });
+function snap(){ if (!S.cur) return; S.hist.push(snapOf(S.cur)); if (S.hist.length>60) S.hist.shift(); S.fut = []; updUndo(); }
+function restore(json){ const o = JSON.parse(json); Object.assign(S.cur, o); touch(); renderAll(); }
+function undo(){ if (!S.hist.length) return; S.fut.push(snapOf(S.cur)); restore(S.hist.pop()); updUndo(); }
+function redo(){ if (!S.fut.length) return; S.hist.push(snapOf(S.cur)); restore(S.fut.pop()); updUndo(); }
+function updUndo(){ $('#bUndo').disabled = !S.hist.length; $('#bRedo').disabled = !S.fut.length; }
+
+/* ---------- 공통 UI ---------- */
+function toast(t){ const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2600); }
+function ask(msg, ok='확인', danger){
+  return new Promise(res => {
+    const m = document.createElement('div'); m.className = 'modal';
+    m.innerHTML = `<div class="box" role="dialog" aria-modal="true"><p>${esc(msg)}</p><div class="actions"><button class="btn" data-a="0">취소</button><button class="btn pri" data-a="1"${danger?' style="background:var(--danger);border-color:var(--danger)"':''}>${esc(ok)}</button></div></div>`;
+    m.addEventListener('click', e => { const a = e.target.closest('[data-a]'); if (a || e.target===m) { m.remove(); res(a && a.dataset.a==='1'); } });
+    document.body.appendChild(m); m.querySelector('[data-a="1"]').focus();
+  });
+}
+function setTab(t){
+  S.tab = t;
+  document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', b.dataset.tab===t));
+  $('#vInput').hidden = t!=='input'; $('#vVerdict').hidden = t!=='verdict'; $('#vGantt').hidden = t!=='gantt';
+  try { localStorage.setItem(LS+'.tab', t); } catch(e) {}
+  if (t==='verdict') renderVerdict();
+  if (t==='gantt') renderGanttAll();
+}
+function renderAll(){ renderProjSel(); renderInput(); renderVerdict(); renderGanttAll(); renderFoot(); updCount(); }
+function renderProjSel(){
+  const s = $('#projSel');
+  s.innerHTML = S.projects.slice().sort((a,b) => b.updatedAt-a.updatedAt).map(p => `<option value="${p.id}"${p===S.cur?' selected':''}>${esc(p.input.name||'이름 없음')}${p.example?' (예시)':''}</option>`).join('');
+}
+function updCount(){ const { E } = effective(S.cur); const n = Object.values(E).filter(s => s==='Y').length, q = Object.values(E).filter(s => s==='Q').length; $('#vCnt').textContent = `대상 ${n}${q?` · 확인 ${q}`:''}`; }
+
+/* ---------- 01 사업 개요 ---------- */
+function fld(id, label, html, hint){ const k = id.slice(2), i = S.cur.input, u = (i.unk||{})[k], s = (i.src||{})[k];
+  return `<div class="fld"><label for="${id}">${label}${u?'<em class="unk">확인 필요</em>':''}</label>${html}${hint?`<span class="hint">${hint}</span>`:''}${s?`<span class="src">출처: ${esc(s)}</span>`:''}</div>`; }
+function numIn(k, unit, ph){ return `<div class="unit"><input type="number" min="0" step="any" class="num" id="i_${k}" data-k="${k}" value="${esc(S.cur.input[k])}" placeholder="${ph||''}"><span>${unit}</span></div>`; }
+function selIn(k, opts){ return `<select id="i_${k}" data-k="${k}">${opts.map(([v,t]) => `<option value="${v}"${S.cur.input[k]===v?' selected':''}>${esc(t)}</option>`).join('')}</select>`; }
+function renderInput(){
+  const p = S.cur, i = p.input, c = derive(i);
+  $('#vInput').innerHTML = `<div class="form wrap">
+    ${p.example ? `<div class="banner info">예시 데이터입니다. 값을 바꾸면 내 프로젝트로 저장됩니다. 실제 사업명·발주처명 대신 가칭을 권합니다.</div>` : ''}
+    <div class="sec"><h2>기본 정보</h2><div class="grid">
+      ${fld('i_name','프로젝트명 (가칭)',`<input type="text" id="i_name" data-k="name" value="${esc(i.name)}">`)}
+      ${fld('i_sido','시·도',selIn('sido', SIDO.map(s => [s,s])), i.sido==='서울특별시' ? '서울시 조례 기준 반영' : '조례 항목은 "확인 필요"로 표시')}
+      ${fld('i_sgg','시·군·구',`<input type="text" id="i_sgg" data-k="sgg" value="${esc(i.sgg)}" placeholder="예: 용산구">`)}
+      ${fld('i_type','사업 유형',selIn('type', Object.entries(TYPES)))}
+      ${i.type==='redev' ? fld('i_redevKind','정비사업 구분',selIn('redevKind',[['redevelop','재개발'],['rebuild','재건축']])) : ''}
+      ${fld('i_owner','사업 주체',selIn('owner', [['private','민간'],['public','공공']]))}
+      ${fld('i_zone','용도지역',selIn('zone', ZONES.map(z => [z[0], z[1]])))}
+      ${fld('i_use','주용도',selIn('use', Object.entries(USES)))}
+    </div></div>
+    <div class="sec"><h2>규모 <small>면적은 ㎡, 소수점 둘째 자리까지</small></h2><div class="grid">
+      ${fld('i_site','대지면적',numIn('site','㎡'))}
+      ${fld('i_area','사업(구역)면적',numIn('area','㎡', i.site||''),'비우면 대지면적 사용')}
+      ${fld('i_gfa','연면적 합계',numIn('gfa','㎡'))}
+      ${fld('i_maxBld','가장 큰 동 연면적',numIn('maxBld','㎡', i.gfa||''),'안전영향평가용 · 비우면 연면적 합계')}
+      ${fld('i_floors','지상 최고층수',numIn('floors','층'))}
+      ${fld('i_basements','지하층수',numIn('basements','층'))}
+      ${fld('i_height','최고높이',numIn('height','m'))}
+      ${fld('i_depth','최대 굴착깊이',numIn('depth','m', c.basements? String(c.depth):''), c.depthEst && c.basements ? `비우면 추정: 지하 ${c.basements}층 × 3.6m + 1.5m = ${f1(c.depth)}m` : '집수정·E/V 피트 제외')}
+      ${fld('i_hh', i.use==='officetel' ? '실 수' : '세대수', numIn('hh', i.use==='officetel' ? '실' : '세대'))}
+      ${i.use==='mixed' ? fld('i_resRatio','주택 연면적 비율',numIn('resRatio','%','100'),'주상복합 승인 예외 판정용') : ''}
+    </div></div>
+    <div class="sec"><h2>입지 · 특이사항 <small>해당하는 것만 체크</small></h2><div class="checks">
+      ${FLAGS.map(([k,t,d]) => `<label class="chk"><input type="checkbox" id="f_${k}" data-f="${k}"${i.flags&&i.flags[k]?' checked':''}><span>${t}${(i.unk||{})[k]?'<em class="unk">확인 필요</em>':''}<small>${d}</small>${(i.src||{})[k]?`<small style="color:var(--accent)">출처: ${esc(i.src[k])}</small>`:''}</span></label>`).join('')}
+    </div></div>
+    <div class="sec"><h2>참고 사항 <small>판정에는 쓰지 않는 계획 수치·진행 상황 — 출처와 함께 기록</small></h2>
+      <textarea class="memo" id="i_memo" data-k="memo" placeholder="예: 결정 용적률 400% 이하 (고시 제0000-000호)">${esc(i.memo||'')}</textarea></div>
+    <div class="actions">
+      <button class="btn pri" id="bRun">판정하고 일정표 만들기</button>
+      <button class="btn" id="bSeeV">판정 결과만 보기</button>
+      <span class="note">판정 기준표 v${RULESET.version} · ${RULESET.date} 확인 · 법적 판단을 대신하지 않습니다</span>
+    </div>
+  </div>`;
+}
+$('#vInput').addEventListener('change', e => {
+  const t = e.target, p = S.cur;
+  if (!t.dataset.k && !t.dataset.f) return;
+  snap();
+  const k = t.dataset.f || t.dataset.k;
+  if (t.dataset.f) { p.input.flags = { ...(p.input.flags||{}), [t.dataset.f]: t.checked }; }
+  else p.input[t.dataset.k] = t.value;
+  // 값을 직접 넣으면 확인 필요 표시를 해제
+  if (p.input.unk && p.input.unk[k] && (t.dataset.f || t.value!=='')) { p.input.unk = { ...p.input.unk }; delete p.input.unk[k]; const y = $('#vInput').scrollTop; renderInput(); $('#vInput').scrollTop = y; }
+  touch(); updCount(); renderFoot();
+  if (['use','type','sido','basements','gfa','site','name'].includes(t.dataset.k)) { const y = $('#vInput').scrollTop; renderInput(); $('#vInput').scrollTop = y; if (t.dataset.k==='name') renderProjSel(); }
+});
+$('#vInput').addEventListener('click', async e => {
+  if (e.target.id==='bSeeV') setTab('verdict');
+  if (e.target.id==='bRun') await regenerate();
+});
+async function regenerate(){
+  const p = S.cur;
+  if (p.rows.length && !(await ask('판정 결과대로 일정표를 새로 만듭니다. 손으로 고친 일정은 바뀝니다(되돌리기 가능).', '새로 만들기'))) return;
+  snap();
+  const { c, E } = effective(p);
+  p.rows = buildRows(c, E); S.sel = null; p.stale = false;
+  touch(); setTab('gantt'); renderFoot();
+}
+
+/* ---------- 02 법령 판정 ---------- */
+function renderVerdict(){
+  const p = S.cur, { c, V, E } = effective(p);
+  const cnt = s => Object.values(E).filter(x => x===s).length;
+  const pathName = { housing:'주택건설사업계획승인 (주택법)', permit:'건축허가 (건축법)', redev:'정비사업 사업시행계획인가 (도시정비법)' }[c.path];
+  const mismatch = (p.input.type==='housing' && c.path==='permit') || (p.input.type==='permit' && c.path==='housing');
+  const cats = [...new Set(RULES.map(r => r.cat))];
+  $('#vVerdict').innerHTML = `<div class="vwrap wrap">
+    <div class="sum">
+      <div class="k path"><span>인허가 경로</span><b>${pathName}</b></div>
+      <div class="k"><b style="color:var(--ok)">${cnt('Y')}</b><span>대상</span></div>
+      <div class="k"><b style="color:var(--warn)">${cnt('Q')}</b><span>확인 필요</span></div>
+      <div class="k"><b style="color:var(--no)">${cnt('N')}</b><span>비대상</span></div>
+    </div>
+    ${mismatch ? `<div class="banner warn">입력한 사업 유형(${TYPES[p.input.type]})과 판정 경로가 다릅니다. ${esc(V.hap.r)}</div>` : ''}
+    ${!c.isSeoul ? `<div class="banner warn">${esc(c.sido)} 조례는 아직 기준표에 없습니다. 조례에 따라 달라지는 항목은 법령 기준으로 판정하고 "확인 필요"로 표시했습니다.</div>` : ''}
+    ${p.stale ? `<div class="banner info">판정을 고쳤습니다. 일정표에 반영하려면 <button class="btn sm pri" id="bRegen2">판정대로 일정 다시 만들기</button></div>` : ''}
+    <div class="tbl-wrap"><table class="vt">
+      <thead><tr><th style="width:190px">항목</th><th style="width:96px">판정</th><th>판단 근거 (입력값 대입)</th><th style="width:290px">근거 법령 · 기준</th><th style="width:110px">기준 신뢰도</th><th style="width:118px">직접 지정</th></tr></thead>
+      <tbody>${cats.map(cat => `<tr class="cat"><td colspan="6">${cat}</td></tr>` + RULES.filter(r => r.cat===cat).map(r => {
+        const ov = (p.overrides||{})[r.id];
+        return `<tr><td class="nm">${esc(r.name)}</td>
+          <td><span class="pill ${E[r.id]}${ov?' ov':''}">${ST[E[r.id]]}</span>${ov?`<div class="note" style="font-size:11px">자동: ${ST[V[r.id].s]}</div>`:''}</td>
+          <td class="why">${esc(V[r.id].r)}</td>
+          <td><div class="law">${esc(r.law)}</div><div class="memo">${esc(r.memo)}</div></td>
+          <td><span class="conf ${r.conf}">${CONF[r.conf]}</span><div class="note" style="font-size:11px">${RULESET.date} 확인</div></td>
+          <td><select data-ov="${r.id}" aria-label="${esc(r.name)} 직접 지정"><option value="">자동</option><option value="Y"${ov==='Y'?' selected':''}>대상</option><option value="N"${ov==='N'?' selected':''}>비대상</option><option value="Q"${ov==='Q'?' selected':''}>확인 필요</option></select></td></tr>`;
+      }).join('')).join('')}</tbody></table></div>
+    <p class="note">기준 신뢰도 — "원문 확인": 국가법령정보센터 현행 원문(괄호 안 시행일)과 대조. "해석례·2차 자료": 법제처 해석례·공공기관 자료로 확인, 원문 대조 권장. "기준값 확인 필요": 자료 간 수치가 다르거나 구버전 자료 기준. 판정은 검토 보조용이며 법적 판단을 대신하지 않습니다.</p>
+  </div>`;
+}
+$('#vVerdict').addEventListener('change', e => {
+  const id = e.target.dataset.ov; if (!id) return;
+  snap(); const p = S.cur; p.overrides = { ...(p.overrides||{}) };
+  if (e.target.value) p.overrides[id] = e.target.value; else delete p.overrides[id];
+  p.stale = true; touch(); renderVerdict(); updCount();
+});
+$('#vVerdict').addEventListener('click', e => { if (e.target.id==='bRegen2') regenerate(); });
+
+/* ---------- 03 일정표 ---------- */
+const LEFT_NM = 250;
+const leftW = st => LEFT_NM + (st.showOwner ? 64 : 0) + (st.showNote ? 150 : 0);
+const rowById = id => S.cur.rows.find(r => r.id===id);
+const colorOf = r => r.color || PALETTES[S.cur.settings.palette].c[r.cat] || '#1a4f9c';
+const spanMonths = rows => Math.max(36, Math.ceil(Math.max(0, ...rows.map(endOf))) + 6);
+function ymAdd(base, m){ const [y, mo] = (base||nowYM()).split('-').map(Number); const t = y*12 + (mo-1) + Math.floor(m); return [Math.floor(t/12), t%12 + 1]; }
+const ymStr = (base, m) => { const [y, mo] = ymAdd(base, m); return `${y}.${String(mo).padStart(2,'0')}`; };
+const fmtDur = d => d<1 ? `${Math.round(d*4)}주` : `${+d.toFixed(2)}개월`;
+const fmtAt = (st, m) => st.axis==='ym' ? `${ymStr(st.base, m)}${m%1 ? ` ${Math.round((m%1)*4)+1}주` : ''}` : `${+(m+1).toFixed(2)}M`;
+
+function renderGanttAll(){ if (S.tab!=='gantt') return; renderTool(); renderGantt(); renderInsp(); }
+function renderTool(){
+  const st = S.cur.settings;
+  $('#gTool').innerHTML = `
+    <button class="btn sm" id="gAdd">+ 행</button>
+    <button class="btn sm" id="gMs">+ 마일스톤</button>
+    <span class="sep"></span>
+    <button class="btn sm" id="gFix" title="앞 단계보다 먼저 시작하는 항목을 뒤로 밀어 맞춥니다">선후관계 맞추기</button>
+    <button class="btn sm" id="gRegen">판정대로 다시 만들기</button>
+    <span class="sep"></span>
+    <button class="btn sm" id="gZo" aria-label="축소">−</button><span class="zoom">${st.px}px/월</span><button class="btn sm" id="gZi" aria-label="확대">+</button>
+    <button class="btn sm" id="gFit">맞춤</button>`;
+}
+function renderGantt(){
+  const p = S.cur, st = p.settings, px = st.px, rows = p.rows;
+  const body = $('#gBody');
+  if (!rows.length) { body.innerHTML = `<div class="gempty">아직 일정이 없습니다.<br><br><button class="btn pri" id="gEmptyRun">판정하고 일정표 만들기</button><br><br><span class="note">01 사업 개요를 먼저 입력하세요.</span></div>`; return; }
+  const M = spanMonths(rows), W = M*px, LW = leftW(st);
+  const leftHead = `<div class="g-left" style="width:${LW}px"><div class="c-nm">구분 · 항목</div>${st.showOwner?'<div class="c-ow">담당</div>':''}${st.showNote?'<div class="c-nt">비고</div>':''}</div>`;
+  let hm = '', hq = '';
+  for (let m = 0; m < M; m++) {
+    const [y, mo] = ymAdd(st.base, m);
+    const lab = st.axis==='ym' ? (mo===1 || m===0 ? `${y}.${String(mo).padStart(2,'0')}` : `${mo}월`) : `${m+1}M`;
+    const step = px < 36 ? (st.axis==='ym' ? 3 : 3) : 1;
+    hm += `<div class="hm${st.axis==='ym'&&mo===1?' yr':''}" style="left:${m*px}px;width:${px}px">${m%step===0 || (st.axis==='ym'&&mo===1) ? lab : ''}</div>`;
+    if (px >= 48) for (let q = 0; q < 4; q++) hq += `<div class="hq" style="left:${m*px + q*px/4}px;width:${px/4}px">${q+1}</div>`;
+  }
+  let html = `<div class="g-row g-head">${leftHead}<div class="g-time" style="width:${W}px">${hm}${hq}</div></div>`;
+  const yMap = {}; let y = 44;
+  const gridBg = `background-size:${px}px 100%`;
+  for (const [cat, label] of CATS) {
+    const rs = rows.filter(r => r.cat===cat); if (!rs.length) continue;
+    html += `<div class="g-row grp" data-cat="${cat}"><div class="g-left" style="width:${LW}px"><div class="c-nm"><i style="width:8px;height:8px;border-radius:2px;background:${PALETTES[st.palette].c[cat]}"></i>${label}<em>${rs.length}</em></div></div><div class="g-time" style="width:${W}px"></div></div>`;
+    y += 29;
+    for (const r of rs) {
+      yMap[r.id] = y + 15;
+      const sel = S.sel===r.id, col = colorOf(r), x = r.start*px;
+      const tag = r.tent ? '<span class="tag">확인 필요</span>' : '';
+      let mark;
+      if (r.ms) mark = `<div class="ms${sel?' sel':''}" data-id="${r.id}" style="left:${x}px" title="${esc(r.name)} · ${fmtAt(st, r.start)}"><i style="background:${col}"></i><span>${fmtAt(st, r.start)}</span></div>`;
+      else {
+        const w = Math.max(4, r.dur*px);
+        mark = `<div class="bar${r.tent?' tent':''}${sel?' sel':''}${LIGHT_TEXT.has(col)?' dark-text':''}" data-id="${r.id}" style="left:${x}px;width:${w}px;background-color:${col}" title="${esc(r.name)} · ${fmtAt(st, r.start)} ~ ${fmtAt(st, endOf(r))} (${fmtDur(r.dur)})"><span class="h l"></span>${w>44 ? fmtDur(r.dur) : ''}<span class="h r"></span></div>`
+          + (w<=44 ? `<div class="bar-lbl" style="left:${x+w+4}px">${fmtDur(r.dur)}</div>` : '');
+      }
+      html += `<div class="g-row item${sel?' sel':''}" data-row="${r.id}"><div class="g-left" style="width:${LW}px"><div class="c-nm" title="${esc(r.name)}">${esc(r.name)}${tag}</div>${st.showOwner?`<div class="c-ow">${esc(r.owner)}</div>`:''}${st.showNote?`<div class="c-nt" title="${esc(r.note)}">${esc(r.note)}</div>`:''}</div><div class="g-time" style="width:${W}px;${gridBg}">${mark}</div></div>`;
+      y += 31;
+    }
+  }
+  // 기준선(오늘)
+  let today = '';
+  if (st.axis==='ym' && st.todayLine) {
+    const [by, bm] = (st.base||nowYM()).split('-').map(Number), d = new Date();
+    const m = (d.getFullYear()*12 + d.getMonth()) - (by*12 + bm - 1) + (d.getDate()-1)/30;
+    if (m >= 0 && m <= M) today = `<div class="today" style="left:${LW + m*px}px"><b>오늘</b></div>`;
+  }
+  // 선후관계 선
+  let paths = '';
+  if (st.deps !== 'off') {
+    for (const r of rows) for (const d of r.deps) {
+      const a = rowById(d); if (!a || yMap[a.id]==null || yMap[r.id]==null) continue;
+      const hot = S.sel && (S.sel===r.id || S.sel===a.id);
+      if (st.deps==='sel' && !hot) continue;
+      const x1 = endOf(a)*px, y1 = yMap[a.id], x2 = r.start*px, y2 = yMap[r.id];
+      const mx = Math.max(x1 + 6, Math.min(x2 - 6, x1 + 12));
+      paths += `<path class="${hot?'hot':''}" d="M${x1} ${y1} H${mx} V${y2} H${x2 - 2}"/><path class="${hot?'hot':''}" d="M${x2-6} ${y2-3} L${x2-1} ${y2} L${x2-6} ${y2+3}"/>`;
+    }
+  }
+  body.innerHTML = html + today + `<svg class="deps" style="left:${LW}px;top:0" width="${W}" height="${y}">${paths}</svg>`;
+  // 프로젝트를 처음 열 때 오늘(연·월 표기) 6개월 전으로 이동
+  if (S.needScroll && $('#gScroll').clientWidth > 0) { S.needScroll = false; const [by, bm] = (st.base||nowYM()).split('-').map(Number), d = new Date(); const tm = (d.getFullYear()*12 + d.getMonth()) - (by*12 + bm - 1); $('#gScroll').scrollLeft = st.axis==='ym' && tm > 6 ? (tm - 6)*px : 0; }
+}
+function renderInsp(){
+  const p = S.cur, st = p.settings, r = S.sel && rowById(S.sel), el = $('#insp');
+  if (!r) {
+    el.innerHTML = `<h3>일정표 설정</h3>
+      <div class="fld"><label>표기</label><div class="seg"><button data-set="axis" data-v="rel" aria-pressed="${st.axis==='rel'}">상대 개월</button><button data-set="axis" data-v="ym" aria-pressed="${st.axis==='ym'}">연 · 월</button></div></div>
+      <div class="fld"><label for="sBase">착수 기준월</label><input type="month" id="sBase" value="${esc(st.base)}"></div>
+      <label class="tgl"><input type="checkbox" data-tg="showOwner"${st.showOwner?' checked':''}>담당 열 표시</label>
+      <label class="tgl"><input type="checkbox" data-tg="showNote"${st.showNote?' checked':''}>비고 열 표시</label>
+      <label class="tgl"><input type="checkbox" data-tg="todayLine"${st.todayLine?' checked':''}>오늘 기준선 (연·월 표기)</label>
+      <div class="fld"><label>선후관계 선</label><div class="seg"><button data-set="deps" data-v="sel" aria-pressed="${st.deps==='sel'}">선택한 것만</button><button data-set="deps" data-v="all" aria-pressed="${st.deps==='all'}">전부</button><button data-set="deps" data-v="off" aria-pressed="${st.deps==='off'}">끄기</button></div></div>
+      <h3>색</h3>
+      <div class="pal">${Object.entries(PALETTES).map(([k,v]) => `<button data-pal="${k}" aria-pressed="${st.palette===k}"><span class="sw">${['plan','urban','assess','review','permit','cert'].map(c => `<i style="background:${v.c[c]}"></i>`).join('')}</span>${v.name}</button>`).join('')}</div>
+      <p class="note">막대를 끌어 옮기고, 양 끝을 잡아 늘립니다. 막대를 누르면 여기에서 날짜·이름·선행 항목을 고칩니다. 점선 막대는 "확인 필요" 판정 항목입니다.</p>`;
+    return;
+  }
+  const rule = r.rule && RULE[r.rule], j = rule ? effective(p) : null;
+  const others = p.rows.filter(x => x.id!==r.id && !r.deps.includes(x.id));
+  el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><h3>선택한 항목</h3><button class="btn sm ghost" id="iClose">닫기 ✕</button></div>
+    <div class="fld"><label for="iName">이름</label><input type="text" id="iName" data-e="name" value="${esc(r.name)}"></div>
+    <div class="row2">
+      <div class="fld"><label for="iCat">구분</label><select id="iCat" data-e="cat">${CATS.map(([k,t]) => `<option value="${k}"${r.cat===k?' selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="fld"><label for="iOwner">담당</label><input type="text" id="iOwner" data-e="owner" value="${esc(r.owner)}"></div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label for="iStart">시작 (개월)</label><input type="number" class="num" step="0.25" min="0" id="iStart" data-e="start" value="${+r.start.toFixed(2)}"><span class="hint">${fmtAt(st, r.start)}</span></div>
+      <div class="fld"><label for="iDur">기간 (개월)</label><input type="number" class="num" step="0.25" min="0" id="iDur" data-e="dur" value="${+r.dur.toFixed(2)}"${r.ms?' disabled':''}><span class="hint">${r.ms?'마일스톤':'종료 '+fmtAt(st, endOf(r))}</span></div>
+    </div>
+    <label class="tgl"><input type="checkbox" data-e="ms"${r.ms?' checked':''}>마일스톤 (한 시점)</label>
+    <label class="tgl"><input type="checkbox" data-e="tent"${r.tent?' checked':''}>확인 필요 (점선)</label>
+    <div class="row2"><div class="fld"><label for="iColor">색</label><input type="color" id="iColor" data-e="color" value="${colorOf(r)}" style="width:100%;height:30px;padding:2px"></div>
+      <div class="fld"><label>&nbsp;</label><button class="btn sm" id="iColorReset"${r.color?'':' disabled'}>기본 색으로</button></div></div>
+    <div class="fld"><label for="iNote">비고</label><textarea id="iNote" data-e="note" rows="2">${esc(r.note)}</textarea></div>
+    <div class="fld"><label>선행 항목 <span class="hint">이 항목은 아래가 끝난 뒤 시작</span></label>
+      <div class="deplist">${r.deps.map(d => { const a = rowById(d); return a ? `<div class="d"><span>${esc(a.name)}</span><button class="btn sm ghost" data-undep="${d}" aria-label="선행 항목 빼기">✕</button></div>` : ''; }).join('') || '<span class="note">없음</span>'}</div>
+      <select id="iAddDep"><option value="">+ 선행 항목 추가</option>${others.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select></div>
+    ${rule ? `<div class="why-box"><b>판정: ${ST[j.E[rule.id]]} — ${esc(rule.name)}</b><span>${esc(j.V[rule.id].r)}</span><span class="law">${esc(rule.law)} · ${CONF[rule.conf]} · ${RULESET.date}</span></div>` : ''}
+    <div class="actions"><button class="btn sm" id="iDupRow">복제</button><button class="btn sm" id="iDel" style="color:var(--danger)">삭제</button></div>`;
+}
+
+/* 일정표 이벤트 */
+$('#gTool').addEventListener('click', e => {
+  const id = e.target.id, p = S.cur, st = p.settings;
+  if (id==='gAdd' || id==='gMs') {
+    snap(); const base = S.sel && rowById(S.sel);
+    const r = { id:uid(), cat: base ? base.cat : 'plan', name: id==='gMs' ? '새 마일스톤' : '새 항목', dur: id==='gMs' ? 0 : 2, start: base ? endOf(base) : 0,
+      deps: base ? [base.id] : [], owner:'', note:'', ms: id==='gMs', tent:false, rule:null, color:'' };
+    const idx = base ? p.rows.indexOf(base) + 1 : p.rows.length; p.rows.splice(idx, 0, r); S.sel = r.id; touch(); renderGanttAll(); renderFoot();
+    setTimeout(() => { const n = $('#iName'); n && (n.focus(), n.select()); }, 0);
+  }
+  if (id==='gFix') { snap(); propagate(p.rows, false); touch(); renderGantt(); renderFoot(); toast('선후관계에 맞춰 뒤 항목을 밀었습니다'); }
+  if (id==='gRegen') regenerate();
+  if (id==='gZi' || id==='gZo') { st.px = Math.max(16, Math.min(160, st.px + (id==='gZi' ? 8 : -8))); touch(); renderTool(); renderGantt(); }
+  if (id==='gFit') { const w = $('#gScroll').clientWidth - leftW(st) - 20; st.px = Math.max(16, Math.min(160, Math.floor(w / spanMonths(p.rows)))); touch(); renderTool(); renderGantt(); }
+});
+$('#gBody').addEventListener('click', e => {
+  if (e.target.id==='gEmptyRun') { regenerate(); return; }
+  if (drag && drag.moved) return;
+  const row = e.target.closest('[data-row]');
+  if (row) { S.sel = row.dataset.row; renderGantt(); renderInsp(); }
+  else if (e.target.closest('.g-time') || e.target.closest('.gbody')) { if (S.sel) { S.sel = null; renderGantt(); renderInsp(); } }
+});
+let drag = null;
+$('#gBody').addEventListener('pointerdown', e => {
+  const el = e.target.closest('.bar,.ms'); if (!el || e.button!==0) return;
+  const r = rowById(el.dataset.id); if (!r) return;
+  const mode = e.target.classList.contains('l') ? 'l' : e.target.classList.contains('r') ? 'r' : 'm';
+  drag = { r, el, mode, x0:e.clientX, s0:r.start, d0:r.dur, moved:false, pre:snapOf(S.cur) };
+  el.setPointerCapture(e.pointerId); e.preventDefault();
+});
+$('#gBody').addEventListener('pointermove', e => {
+  if (!drag) return;
+  const px = S.cur.settings.px, dm = Math.round(((e.clientX - drag.x0) / px) * 4) / 4;
+  if (!drag.moved && Math.abs(e.clientX - drag.x0) < 3) return;
+  drag.moved = true;
+  const r = drag.r;
+  if (drag.mode==='m') r.start = Math.max(0, drag.s0 + dm);
+  else if (drag.mode==='r') r.dur = Math.max(0.25, drag.d0 + dm);
+  else { const ns = Math.max(0, Math.min(drag.s0 + drag.d0 - 0.25, drag.s0 + dm)); r.dur = drag.d0 + (drag.s0 - ns); r.start = ns; }
+  drag.el.style.left = r.start*px + 'px';
+  if (!r.ms) drag.el.style.width = Math.max(4, r.dur*px) + 'px';
+});
+const endDrag = () => {
+  if (!drag) return;
+  const d = drag;
+  if (d.moved) { S.hist.push(d.pre); if (S.hist.length>60) S.hist.shift(); S.fut = []; updUndo(); S.sel = d.r.id; touch(); renderGantt(); renderInsp(); renderFoot(); }
+  else { S.sel = d.r.id; renderGantt(); renderInsp(); }
+  setTimeout(() => { drag = null; }, 0);
+};
+$('#gBody').addEventListener('pointerup', endDrag);
+$('#gBody').addEventListener('pointercancel', endDrag);
+
+$('#insp').addEventListener('change', e => {
+  const t = e.target, p = S.cur, st = p.settings;
+  if (t.id==='sBase') { snap(); st.base = t.value || nowYM(); touch(); renderGantt(); renderInsp(); return; }
+  if (t.dataset.tg) { snap(); st[t.dataset.tg] = t.checked; touch(); renderGantt(); return; }
+  if (t.id==='iAddDep' && t.value) { const r = rowById(S.sel); snap(); r.deps.push(t.value); if (topo(p.rows).length!==p.rows.length) r.deps.pop(); touch(); renderGantt(); renderInsp(); return; }
+  const k = t.dataset.e; if (!k) return;
+  const r = rowById(S.sel); if (!r) return;
+  snap();
+  if (k==='start' || k==='dur') r[k] = Math.max(k==='dur' ? 0.25 : 0, Math.round((+t.value||0)*4)/4);
+  else if (k==='ms' || k==='tent') r[k] = t.checked;
+  else r[k] = t.value;
+  touch(); renderGantt(); renderInsp(); renderFoot();
+});
+$('#insp').addEventListener('click', async e => {
+  const t = e.target.closest('button'); if (!t) return;
+  const p = S.cur, st = p.settings;
+  if (t.dataset.set) { snap(); st[t.dataset.set] = t.dataset.v; touch(); renderGantt(); renderInsp(); return; }
+  if (t.dataset.pal) { snap(); st.palette = t.dataset.pal; touch(); renderGantt(); renderInsp(); return; }
+  if (t.id==='iClose') { S.sel = null; renderGantt(); renderInsp(); return; }
+  const r = rowById(S.sel); if (!r) return;
+  if (t.dataset.undep) { snap(); r.deps = r.deps.filter(d => d!==t.dataset.undep); touch(); renderGantt(); renderInsp(); }
+  if (t.id==='iColorReset') { snap(); r.color = ''; touch(); renderGantt(); renderInsp(); }
+  if (t.id==='iDupRow') { snap(); const c = { ...JSON.parse(JSON.stringify(r)), id:uid(), name:r.name+' (복제)' }; p.rows.splice(p.rows.indexOf(r)+1, 0, c); S.sel = c.id; touch(); renderGantt(); renderInsp(); }
+  if (t.id==='iDel') delRow();
+});
+function delRow(){
+  const p = S.cur, r = rowById(S.sel); if (!r) return;
+  snap(); p.rows = p.rows.filter(x => x!==r); p.rows.forEach(x => x.deps = x.deps.filter(d => d!==r.id));
+  S.sel = null; touch(); renderGantt(); renderInsp(); renderFoot(); toast(`"${r.name}" 삭제 — Ctrl+Z로 되돌리기`);
+}
+document.addEventListener('keydown', e => {
+  const tag = (e.target.tagName||'').toLowerCase(), typing = ['input','textarea','select'].includes(tag);
+  if ((e.ctrlKey||e.metaKey) && !typing && e.key.toLowerCase()==='z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+  if ((e.ctrlKey||e.metaKey) && !typing && e.key.toLowerCase()==='y') { e.preventDefault(); redo(); }
+  if (!typing && S.tab==='gantt' && S.sel && (e.key==='Delete' || e.key==='Backspace')) { e.preventDefault(); delRow(); }
+  if (e.key==='Escape') { $('#expMenu').hidden = true; if (S.sel && !typing) { S.sel = null; renderGantt(); renderInsp(); } }
+});
+
+function renderFoot(){
+  const p = S.cur, st = p.settings, rows = p.rows, { c, E } = effective(p);
+  const end = rows.length ? Math.max(...rows.map(endOf)) : 0, permit = rows.find(r => r.id==='p_main'), b0 = rows.find(r => r.id==='b0');
+  $('#foot').innerHTML = `<span><b>${rows.length}</b>개 항목</span>
+    ${permit ? `<span>${esc(permit.name)} 완료 <b>${fmtAt(st, endOf(permit))}</b></span>` : ''}
+    ${b0 ? `<span>착공 <b>${fmtAt(st, b0.start)}</b></span>` : ''}
+    ${rows.length ? `<span>착수 ~ 준공 <b>${+end.toFixed(2)}개월</b></span>` : ''}
+    <span class="grow"></span><span>${esc(c.sido)} · ${esc(c.zoneName)} · 기준표 v${RULESET.version} (${RULESET.date})</span>`;
+}
+
+/* ---------- 프로젝트 관리 ---------- */
+function openProject(p){ S.cur = p; S.sel = null; S.needScroll = true; S.hist = []; S.fut = []; updUndo(); renderAll(); }
+$('#projSel').addEventListener('change', e => { const p = S.projects.find(x => x.id===e.target.value); if (p) openProject(p); });
+$('#bNew').addEventListener('click', () => { const p = makeProject(false); S.projects.push(p); dirtyIds.add(p.id); flush(); openProject(p); setTab('input'); });
+$('#bDup').addEventListener('click', () => { const p = JSON.parse(JSON.stringify(S.cur)); p.id = uid(); p.example = false; p.input.name += ' (복제)'; p.updatedAt = Date.now(); S.projects.push(p); dirtyIds.add(p.id); flush(); openProject(p); toast('복제했습니다'); });
+$('#bDel').addEventListener('click', async () => {
+  const p = S.cur;
+  if (!(await ask(`"${p.input.name}" 프로젝트를 삭제합니다. 되돌릴 수 없습니다.`, '삭제', true))) return;
+  try { await store.del(p.id); } catch(e) { toast('삭제하지 못했습니다'); return; }
+  S.projects = S.projects.filter(x => x!==p);
+  if (!S.projects.length) { const n = makeProject(true); S.projects.push(n); }
+  openProject(S.projects.slice().sort((a,b) => b.updatedAt-a.updatedAt)[0]);
+});
+$('#bHelp').addEventListener('click', showGuide);
+$('#bUndo').addEventListener('click', undo); $('#bRedo').addEventListener('click', redo);
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
+
+/* ---------- 내보내기 ---------- */
+let dlNS;
+async function saveFile(name, data, mime){
+  if (dlNS === undefined) { try { dlNS = (window.claude && claude.use) ? await claude.use('downloads') : null; } catch(e) { dlNS = null; } }
+  if (dlNS) {
+    try { await dlNS.save({ filename:name, data }); toast(`${name} 내보냄`); }
+    catch(e) { if (e && e.code==='declined') return; toast('내보내지 못했습니다: ' + (e && (e.message||e.code) || '')); }
+    return;
+  }
+  const blob = data instanceof Blob ? data : new Blob([data], { type:mime });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+const fileBase = () => (S.cur.input.name || '인허가일정').replace(/[\\/:*?"<>|]/g, '_').slice(0, 60);
+$('#bExp').addEventListener('click', e => { e.stopPropagation(); $('#expMenu').hidden = !$('#expMenu').hidden; });
+document.addEventListener('click', e => { if (!e.target.closest('.menu')) $('#expMenu').hidden = true; });
+$('#expMenu').addEventListener('click', async e => {
+  const b = e.target.closest('[data-x]'); if (!b) return; $('#expMenu').hidden = true;
+  const x = b.dataset.x;
+  try {
+    if (x==='json') await saveFile(fileBase() + '.json', JSON.stringify({ app:'permit-timeline', ruleset:RULESET, project:S.cur }, null, 2), 'application/json');
+    if (x==='xlsx') await exportXlsx();
+    if (x==='png') { const cv = await drawCanvas(); cv.toBlob(b => saveFile(fileBase() + '_일정표.png', b, 'image/png'), 'image/png'); }
+    if (x==='pdf') await exportPdf();
+    if (x==='import') $('#fImport').click();
+  } catch(err) { toast('내보내지 못했습니다: ' + (err && err.message || err)); }
+});
+$('#fImport').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const o = JSON.parse(await f.text()), src = o.project || o;
+    if (!src.input || !Array.isArray(src.rows)) throw new Error('형식이 맞지 않습니다');
+    const p = { ...makeProject(false), ...src, id:uid(), example:false, updatedAt:Date.now() };
+    p.input.name = (p.input.name || '불러온 프로젝트');
+    S.projects.push(p); dirtyIds.add(p.id); flush(); openProject(p); toast('백업을 새 프로젝트로 불러왔습니다');
+  } catch(err) { toast('불러오지 못했습니다: ' + err.message); }
+});
+async function exportXlsx(){
+  if (!window.XLSX) throw new Error('Excel 모듈을 불러오지 못했습니다');
+  const p = S.cur, st = p.settings, { c, V, E } = effective(p), i = p.input;
+  const sr = k => (i.src||{})[k] || ((i.unk||{})[k] ? '확인 필요' : '');
+  const ov = [['항목','값','비고 · 출처'],['프로젝트명',i.name,sr('name')],['시·도 / 시·군·구',`${i.sido} ${i.sgg||''}`.trim(),sr('sido')],['사업 유형',TYPES[i.type],sr('type')],['판정 경로',{housing:'주택건설사업계획승인',permit:'건축허가',redev:'사업시행계획인가'}[c.path],''],
+    ['사업 주체',c.pub?'공공':'민간',sr('owner')],['용도지역',c.zoneName,sr('zone')],['주용도',USES[i.use],sr('use')],
+    ['대지면적(㎡)',+c.site.toFixed(2),sr('site')],['사업(구역)면적(㎡)',+c.area.toFixed(2), sr('area') || (i.area ? '' : '대지면적 사용')],['연면적 합계(㎡)',c.unk.gfa?'확인 필요':+c.gfa.toFixed(2),sr('gfa')],['가장 큰 동 연면적(㎡)',c.unk.maxBld||c.unk.gfa?'확인 필요':+c.maxBld.toFixed(2), sr('maxBld') || (i.maxBld?'':'연면적 합계 사용')],
+    ['지상층수',c.unk.floors?'확인 필요':c.floors,sr('floors')],['지하층수',c.unk.basements?'확인 필요':c.basements,sr('basements')],['최고높이(m)',c.unk.height?'확인 필요':c.height,sr('height')],['굴착깊이(m)',c.unk.depth&&c.unk.basements?'확인 필요':c.depth, sr('depth') || (c.depthEst&&c.basements?`추정: 지하 ${c.basements}층 × 3.6 + 1.5`:'')],['세대수',c.unk.hh?'확인 필요':c.hh,sr('hh')],
+    ['특이사항', FLAGS.filter(f => c.f[f[0]]).map(f => f[1]).join(', ') || '없음',''],
+    ['특이사항 확인 필요', FLAGS.filter(f => c.unk[f[0]]).map(f => f[1]).join(', ') || '없음',''],
+    ['참고 사항', i.memo || '', ''],
+    ['판정 기준표', `v${RULESET.version}`, `${RULESET.date} 확인 · 법적 판단을 대신하지 않음`]];
+  const vt = [['구분','항목','판정','직접 지정','판단 근거','근거 법령','기준 메모','기준 신뢰도','확인일']].concat(RULES.map(r => [r.cat, r.name, ST[E[r.id]], (p.overrides||{})[r.id] ? '예' : '', V[r.id].r, r.law, r.memo, CONF[r.conf], RULESET.date]));
+  const M = spanMonths(p.rows);
+  const mh = Array.from({ length:M }, (_, m) => st.axis==='ym' ? ymStr(st.base, m) : `${m+1}M`);
+  const catName = Object.fromEntries(CATS);
+  const ordered = CATS.flatMap(([k]) => p.rows.filter(r => r.cat===k));
+  const gt = [['구분','항목','담당','시작','종료','기간(개월)','선행 항목','확인 필요','비고', ...mh]].concat(ordered.map(r => {
+    const cells = mh.map((_, m) => r.ms ? (Math.floor(r.start)===m ? '◆' : '') : (m+1 > r.start && m < endOf(r) ? '■' : ''));
+    return [catName[r.cat], r.name, r.owner, fmtAt(st, r.start), fmtAt(st, endOf(r)), r.ms ? 0 : +r.dur.toFixed(2), r.deps.map(d => (rowById(d)||{}).name).filter(Boolean).join(', '), r.tent ? '예' : '', r.note, ...cells];
+  }));
+  const wb = XLSX.utils.book_new();
+  const s1 = XLSX.utils.aoa_to_sheet(ov); s1['!cols'] = [{wch:22},{wch:60},{wch:70}];
+  const s2 = XLSX.utils.aoa_to_sheet(vt); s2['!cols'] = [{wch:10},{wch:26},{wch:10},{wch:8},{wch:50},{wch:44},{wch:70},{wch:16},{wch:12}];
+  const s3 = XLSX.utils.aoa_to_sheet(gt); s3['!cols'] = [{wch:12},{wch:34},{wch:10},{wch:12},{wch:12},{wch:10},{wch:30},{wch:9},{wch:30}, ...mh.map(() => ({wch:6}))];
+  XLSX.utils.book_append_sheet(wb, s1, '사업개요'); XLSX.utils.book_append_sheet(wb, s2, '법령판정'); XLSX.utils.book_append_sheet(wb, s3, '일정표');
+  const out = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+  await saveFile(fileBase() + '_인허가일정.xlsx', new Blob([out], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), '');
+}
+async function drawCanvas(){
+  try { await document.fonts.ready; } catch(e) {}
+  const p = S.cur, st = p.settings, pal = PALETTES[st.palette].c, rows = p.rows;
+  const M = spanMonths(rows), px = Math.max(18, Math.min(40, Math.floor(1700 / M))), LW = 300, RH = 24, GH = 22, HH = 46, TH = 58;
+  const ordered = CATS.map(([k,l]) => [k, l, rows.filter(r => r.cat===k)]).filter(x => x[2].length);
+  const H = TH + HH + ordered.reduce((s, x) => s + GH + x[2].length*RH, 0) + 30, W = LW + M*px + 24, sc = 2;
+  const cv = document.createElement('canvas'); cv.width = W*sc; cv.height = H*sc; const g = cv.getContext('2d'); g.scale(sc, sc);
+  const F = (w, s) => `${w} ${s}px "IBM Plex Sans KR","Malgun Gothic",sans-serif`;
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#152033'; g.font = F(700, 17); g.fillText(p.input.name || '인허가 일정표', 16, 28);
+  const { c } = effective(p);
+  g.fillStyle = '#5b6678'; g.font = F(400, 11.5);
+  g.fillText(`${c.sido} ${p.input.sgg||''} · ${c.zoneName} · ${USES[p.input.use]} · 연면적 ${fA(c.gfa)} · 지상 ${c.floors}층/지하 ${c.basements}층${c.hh?` · ${c.hh}세대`:''} · 판정 기준표 v${RULESET.version} (${RULESET.date})`, 16, 46);
+  let y = TH;
+  g.fillStyle = '#f0f3f8'; g.fillRect(0, y, W, HH);
+  for (let m = 0; m < M; m++) {
+    const x = LW + m*px, [yy, mo] = ymAdd(st.base, m);
+    g.strokeStyle = mo===1 && st.axis==='ym' ? '#b9c2cf' : '#dfe4eb'; g.beginPath(); g.moveTo(x+.5, y); g.lineTo(x+.5, H-30); g.stroke();
+    const lab = st.axis==='ym' ? (mo===1 || m===0 ? `${String(yy).slice(2)}.${mo}` : `${mo}`) : `${m+1}`;
+    if (px >= 22 || m%2===0) { g.fillStyle = '#152033'; g.font = F(600, 10); g.textAlign = 'center'; g.fillText(lab, x + px/2, y + 28); g.textAlign = 'left'; }
+  }
+  g.fillStyle = '#5b6678'; g.font = F(500, 11); g.fillText(st.axis==='ym' ? '구분 · 항목                                   (연.월)' : '구분 · 항목                                 (개월차)', 12, y + 28);
+  y += HH;
+  for (const [k, l, rs] of ordered) {
+    g.fillStyle = '#f0f3f8'; g.fillRect(0, y, W, GH);
+    g.fillStyle = pal[k]; g.fillRect(12, y + 7, 8, 8);
+    g.fillStyle = '#152033'; g.font = F(700, 11.5); g.fillText(l, 26, y + 15); y += GH;
+    for (const r of rs) {
+      g.strokeStyle = '#edf0f5'; g.beginPath(); g.moveTo(0, y + RH + .5); g.lineTo(W, y + RH + .5); g.stroke();
+      g.fillStyle = '#152033'; g.font = F(400, 11.5);
+      let nm = r.name + (r.tent ? ' (확인 필요)' : '');
+      while (g.measureText(nm).width > LW - (st.showOwner ? 90 : 40) && nm.length > 4) nm = nm.slice(0, -2) + '…';
+      g.fillText(nm, 26, y + 16);
+      if (st.showOwner && r.owner) { g.fillStyle = '#5b6678'; g.font = F(400, 10.5); g.fillText(r.owner, LW - 58, y + 16); }
+      const col = r.color || pal[r.cat], x = LW + r.start*px;
+      if (r.ms) { g.save(); g.translate(x, y + RH/2); g.rotate(Math.PI/4); g.fillStyle = col; g.fillRect(-5, -5, 10, 10); g.restore();
+        g.fillStyle = '#152033'; g.font = F(500, 10); g.fillText(fmtAt(st, r.start), x + 10, y + 16); }
+      else {
+        const w = Math.max(3, r.dur*px);
+        g.fillStyle = col; g.globalAlpha = r.tent ? .55 : 1; g.fillRect(x, y + 5, w, RH - 10); g.globalAlpha = 1;
+        if (r.tent) { g.setLineDash([3, 2]); g.strokeStyle = '#9a5a00'; g.strokeRect(x + .5, y + 5.5, w - 1, RH - 11); g.setLineDash([]); }
+        const lbl = fmtDur(r.dur); g.font = F(500, 9.5);
+        if (g.measureText(lbl).width + 8 < w) { g.fillStyle = LIGHT_TEXT.has(col) ? '#14202f' : '#ffffff'; g.fillText(lbl, x + 4, y + 15.5); }
+        else { g.fillStyle = '#5b6678'; g.fillText(lbl, x + w + 4, y + 15.5); }
+      }
+      y += RH;
+    }
+  }
+  g.strokeStyle = '#b9c2cf'; g.beginPath(); g.moveTo(LW + .5, TH); g.lineTo(LW + .5, y); g.stroke();
+  g.fillStyle = '#5b6678'; g.font = F(400, 10); g.fillText('점선·반투명 막대: 판정 "확인 필요" 항목 · 기간은 실무 표준값이며 수정 가능 · 법적 판단을 대신하지 않음', 16, y + 20);
+  return cv;
+}
+async function exportPdf(){
+  if (!window.jspdf) throw new Error('PDF 모듈을 불러오지 못했습니다');
+  const cv = await drawCanvas(), { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a3' });
+  const PW = 420, PH = 297, mg = 10, aw = PW - mg*2, ah = PH - mg*2;
+  const scale = Math.min(aw / cv.width, ah / cv.height);
+  if (cv.height * (aw / cv.width) <= ah || scale * cv.width >= aw * 0.6) {
+    const w = cv.width * scale, h = cv.height * scale;
+    doc.addImage(cv.toDataURL('image/png'), 'PNG', mg, mg, w, h);
+  } else {
+    const s = aw / cv.width, sliceH = Math.floor(ah / s);
+    for (let y0 = 0, pg = 0; y0 < cv.height; y0 += sliceH, pg++) {
+      const part = document.createElement('canvas'); part.width = cv.width; part.height = Math.min(sliceH, cv.height - y0);
+      part.getContext('2d').drawImage(cv, 0, y0, cv.width, part.height, 0, 0, cv.width, part.height);
+      if (pg) doc.addPage('a3', 'landscape');
+      doc.addImage(part.toDataURL('image/png'), 'PNG', mg, mg, aw, part.height * s);
+    }
+  }
+  await saveFile(fileBase() + '_인허가일정_A3.pdf', doc.output('blob'), 'application/pdf');
+}
+
+/* ---------- 시작 ---------- */
+(async function boot(){
+  let tab = 'gantt'; try { tab = localStorage.getItem(LS+'.tab') || 'gantt'; } catch(e) {}
+  let local = await store.list();
+  S.projects = local.length ? local : [makeProject(true)];
+  openProject(S.projects.slice().sort((a,b) => b.updatedAt-a.updatedAt)[0]);
+  setTab(tab);
+  setSave('이 브라우저에 저장됨', 'local');
+  const t = setTimeout(() => { if (store.mode==='local') setSave('이 브라우저에 저장됨', 'local'); }, 10000);
+  await store.init();
+  clearTimeout(t);
+  let seen = null; try { seen = localStorage.getItem(LS+'.seen'); } catch(e) {}
+  if (seen !== RULESET.version) showGuide();
+  if (store.mode==='cloud') {
+    try {
+      const cloud = await store.list();
+      if (cloud.length) { S.projects = cloud; openProject(cloud.slice().sort((a,b) => b.updatedAt-a.updatedAt)[0]); setTab(S.tab); }
+      else { for (const p of S.projects) await store.put(p); }
+      setSave('저장됨');
+    } catch(e) { store.mode = 'local'; setSave('클라우드 연결 실패 — 이 브라우저에 저장', 'local'); }
+  }
+})();
+</script>
+
+</body>
+</html>
