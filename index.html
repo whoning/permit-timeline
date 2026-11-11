@@ -118,6 +118,7 @@ table.vt{border-collapse:collapse;width:100%;min-width:980px}
 .vt .why{color:var(--fg)}
 .vt .law{font-size:12px;color:var(--muted)}
 .vt .memo{font-size:11.5px;color:var(--muted);margin-top:4px}
+.vt .ref{font-size:12px;color:var(--accent);margin-top:4px}
 .pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 9px;font-size:11.5px;font-weight:600;white-space:nowrap}
 .pill.Y{background:var(--ok-weak);color:var(--ok)} .pill.N{background:var(--no-weak);color:var(--no)} .pill.Q{background:var(--warn-weak);color:var(--warn)}
 .pill.ov{outline:1px dashed currentColor}
@@ -187,6 +188,16 @@ svg.deps path.hot{stroke:var(--accent);opacity:1;stroke-width:1.6}
 .why-box{font-size:12px;background:var(--surface2);border-radius:8px;padding:10px 12px;display:grid;gap:4px}
 .why-box .law{color:var(--muted);font-size:11.5px}
 .tgl{display:flex;gap:8px;align-items:center;font-size:12.5px;cursor:pointer}
+/* 획지 */
+.ptbl{width:100%;border-collapse:collapse}
+.ptbl th{font-size:12px;font-weight:500;color:var(--muted);text-align:left}
+.ptbl th,.ptbl td{padding:4px 6px}
+.ptbl input,.ptbl select{width:100%}
+.ptbl input[type=text]{min-width:110px}
+.ptbl input.num{min-width:84px}
+.ptbl select{min-width:130px}
+.seg.scope{flex-wrap:wrap}
+.seg.scope button{flex:0 1 auto;padding-inline:12px}
 /* footer */
 .foot{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;padding-block:6px;background:var(--surface);border-top:1px solid var(--line);font-size:11.5px;color:var(--muted)}
 .foot b{color:var(--fg);font-weight:600}
@@ -201,6 +212,34 @@ svg.deps path.hot{stroke:var(--accent);opacity:1;stroke-width:1.6}
 .guide .k2 b{font-size:12px}
 .modal .box .actions{justify-content:flex-end}
 .toast{position:fixed;left:50%;bottom:calc(52px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 16px;border-radius:8px;font-size:12.5px;z-index:120;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
+.pcline{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-top:6px}
+.pcdiff{font-weight:700;color:var(--warn)}
+.pcdiff.ok{color:var(--ok)}
+.pcline input{width:140px}
+.gsched{overflow:auto}
+.ssvg{display:block;font-family:var(--f-body)}
+.ssvg text{fill:var(--fg);font-size:10.5px}
+.ssvg .sl-head{fill:var(--surface2)} .ssvg .sl-bg{fill:var(--surface)} .ssvg .sl-bg.alt{fill:var(--surface2);fill-opacity:.55}
+.ssvg .sh{fill:var(--muted);font-size:10px} .ssvg .sh.yr{font-weight:700;fill:var(--fg)}
+.ssvg .sgrid{stroke:var(--line2);stroke-width:1;fill:none} .ssvg .sgrid.c{stroke:var(--line)}
+.ssvg .sl-nm{font-weight:600;font-size:12px}
+.ssvg .snote{fill:var(--muted);font-size:10.5px}
+.ssvg .sbt{fill:#fff;pointer-events:none} .ssvg .sbar.dk .sbt{fill:#152033}
+.ssvg .sbar.tent rect{fill-opacity:.45;stroke:var(--warn);stroke-width:1.2;stroke-dasharray:4 2} .ssvg .sbar.tent .sbt{fill:var(--fg)}
+.ssvg .sms polygon{stroke:var(--fg);stroke-width:.8} .ssvg .sms.tent polygon{fill-opacity:.45;stroke:var(--warn);stroke-dasharray:3 2}
+.ssvg .sbund polygon{fill:var(--warn)} .ssvg .slb.bd{fill:var(--warn);font-weight:600}
+.ssvg .sld{stroke:var(--muted);stroke-width:.6;opacity:.5}
+/* 분야별 일정표 인쇄: A4 가로 한 쪽, 머리글·탭·도구줄·인스펙터·푸터 숨김 (D-09) */
+@page{size:A4 landscape;margin:8mm}
+@media print{
+  html{height:auto}
+  body.gv-sched{--surface:#fff;--surface2:#f0f3f8;--fg:#152033;--muted:#5b6678;--line:#d9dfe8;--line2:#edf0f5;--warn:#9a5a00;background:#fff;height:auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.gv-sched #app{display:block;height:auto}
+  body.gv-sched .top,body.gv-sched .tabs,body.gv-sched .gtool,body.gv-sched .insp,body.gv-sched .foot{display:none!important}
+  body.gv-sched main,body.gv-sched .view,body.gv-sched .gview,body.gv-sched .gmain{display:block;height:auto;overflow:visible}
+  body.gv-sched .gsched{overflow:visible}
+  body.gv-sched .ssvg{width:100%;height:auto}
+}
 @media (max-width:900px){
   .gview{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}
   .insp{border-left:0;border-top:1px solid var(--line);max-height:42vh}
@@ -247,6 +286,7 @@ svg.deps path.hot{stroke:var(--accent);opacity:1;stroke-width:1.6}
         <div class="gmain">
           <div class="gtool" id="gTool"></div>
           <div class="gscroll" id="gScroll"><div class="gbody" id="gBody"></div></div>
+          <div class="gscroll gsched" id="gSched" hidden></div>
         </div>
         <aside class="insp" id="insp"></aside>
       </div>
@@ -261,7 +301,7 @@ svg.deps path.hot{stroke:var(--accent);opacity:1;stroke-width:1.6}
    conf: 'B' = 해석례·공공기관·2차 자료로 확인(원문 대조 권장)
          'C' = 기준값 확인 필요(자료 간 불일치·구버전 자료)
    ============================================================ */
-const RULESET = { version: '0.4', date: '2026-11-03' };
+const RULESET = { version: '0.5', date: '2026-11-04' };
 const SIDO = ['서울특별시','부산광역시','대구광역시','인천광역시','광주광역시','대전광역시','울산광역시','세종특별자치시','경기도','강원특별자치도','충청북도','충청남도','전북특별자치도','전라남도','경상북도','경상남도','제주특별자치도'];
 const ZONES = [
   ['r1x','제1종전용주거지역','res'],['r2x','제2종전용주거지역','res'],['r1','제1종일반주거지역','res'],['r2','제2종일반주거지역','res'],['r3','제3종일반주거지역','res'],['rq','준주거지역','semi'],
@@ -277,9 +317,12 @@ const FLAGS = [
   ['station','역세권 사업','역세권 활성화·역세권 주택 등 — 지구단위계획 변경으로 처리'],
   ['subway','지하역사·지하도상가와 연결','지하연계 복합건축물 판정에 사용'],
   ['heritage','국가유산(문화재) 주변','역사문화환경 보존지역 — 현상변경 허가'],
-  ['scenic','경관지구·중점경관관리구역','경관심의 대상 판정에 사용'],
+  ['scenicZone','경관지구 (시가지·특화경관지구 포함)','건축위원회 심의대상·경관심의 판정에 사용'],
+  ['scenicKey','중점경관관리구역','경관심의 판정에 사용 — 경관계획이 정한 건축물인지 확인'],
   ['sale','분양 목적 건축물 (비주거)','오피스텔·상가 분양 등 — 서울 건축조례 심의 대상 판정 (공동주택은 분양으로 가정)'],
   ['special','특수구조 건축물','대형 캔틸레버·장스팬 등 — 구조 심의']];
+// v0.4 이전 저장 데이터의 scenic(경관지구·중점경관관리구역 통합)은 어느 쪽인지 알 수 없어 새 두 플래그를 '확인 필요'로 본다
+const legacyScenic = (inp, k) => !!(inp && inp.flags && inp.flags.scenic) && (k==='scenicZone' || k==='scenicKey') && !Object.hasOwn(inp.flags, k);
 const CATS = [['plan','설계'],['urban','도시계획'],['redev','정비사업 절차'],['assess','영향평가'],['review','심의'],['permit','인허가'],['cert','인증·성능'],['build','공사·준공']];
 const PALETTES = {
   navy:{name:'남색·금색', c:{plan:'#9db8e0',urban:'#5f80b8',redev:'#3f5d8f',assess:'#2b62ad',review:'#1a4f9c',permit:'#0f2f5e',cert:'#c8961e',build:'#6b7a90'}},
@@ -296,22 +339,34 @@ const Y = r => ({s:'Y', r}), N = r => ({s:'N', r}), Q = r => ({s:'Q', r});
 const ST = { Y:'대상', N:'비대상', Q:'확인 필요' };
 const CONF = { A:'원문 확인', B:'해석례·2차 자료', C:'기준값 확인 필요' };
 
+// 통합심의에 묶이는 심의 (도시정비법 제50조의2①): 항목 이름과 판정 규칙 id. 도시계획(dup)은 세지 않는다.
+const INTEG_BUNDLE = [['건축', ['bc_metro','bc_local','excav']], ['경관', ['landscape']], ['교통', ['traffic']], ['교육환경', ['edu']], ['성능위주', ['fire']], ['재해', ['disaster']], ['환경', ['env','senv']]];
+// 교통영향평가 대상 규모(㎡). 서울 조례 수치는 별표1의 100분의 50 이상이어야 한다 (시행령 제13조의2⑦1). parcel-check가 점검.
+const TRAFFIC_TH = { nat:{apt:60000, officetel:25000, retail:11000, hotel:40000, culture:15000, nonres:15000}, seoul:{apt:50000, officetel:20000, retail:7000, hotel:20000, culture:8000, nonres:8000} };
+const TRAFFIC_REDEV = { nat:50000, seoul:25000 };
 const RULES = [
  {id:'hap', cat:'인허가', name:'주택건설사업계획승인', law:'주택법 제15조, 시행령 제27조 [시행 2026.9.8.]', conf:'A',
-  memo:'공동주택 30세대(단지형 연립·다세대 50세대) 이상. 주상복합 예외(제27조제4항): 준주거지역·상업지역(유통상업 제외)에서 300세대 미만이고 주택 연면적 비율 90% 미만. 2026.9 입법예고(300→500세대 등)는 현행 원문에 아직 반영되지 않음.',
+  memo:'공동주택 30세대(단지형 연립·다세대 50세대) 이상. 주상복합 예외(제27조제4항): 준주거지역·상업지역(유통상업 제외)에서 300세대 미만이고 주택 연면적 비율 90% 미만. 2026.9 입법예고(300→500세대 등)는 현행 원문에 아직 반영되지 않음. 제27조⑤: 동일 사업주체가 일단의 주택단지를 여러 구역으로 나누어 건설하면 전체 구역 세대수로 산정 — 획지 보기는 획지 세대수 합(동일 사업주체 전제), 경로를 건축허가로 지정한 획지는 제외.',
   fn: c => {
     if (c.type==='redev') return N('정비사업 — 도시정비법 사업시행계획인가로 진행');
     if (!c.res) return N(`${USES[c.use]} — 주택 없음`);
-    if (c.hh < 30) return N(`세대수 ${c.hh}세대 < 30세대`);
-    if (c.use==='mixed' && (c.zk==='com'||c.zk==='semi') && c.hh<300 && c.resRatio<90) return N(`주상복합 예외: ${c.zoneName}, ${c.hh}세대 < 300세대, 주택비율 ${c.resRatio}% < 90% → 건축허가`);
-    return Y(`공동주택 ${c.hh}세대 ≥ 30세대`);
+    const H = c.hapHh, R = c.hapRes, sx = c.hapSum ? ` (제27조⑤ 전체 세대수 합산 ${H}세대, 동일 사업주체 전제)` : '';
+    if (H < 30) return N(`세대수 ${H}세대 < 30세대${sx}`);
+    if (c.use==='mixed' && (c.zk==='com'||c.zk==='semi') && H<300 && R<90) return N(`주상복합 예외: ${c.zoneName}, ${H}세대 < 300세대, 주택비율 ${R}% < 90% → 건축허가${sx}`);
+    return Y(`공동주택 ${H}세대 ≥ 30세대${sx}`);
   }},
  {id:'dup', cat:'도시계획', name:'지구단위계획 결정·변경', law:'국토계획법 제30조, 제49조~제52조', conf:'B',
   memo:'입력값 기준. 도시·건축공동위원회(또는 도시계획위원회) 심의 후 결정 고시.',
   fn: c => (c.f.dup||c.f.station) ? Y(c.f.station ? '역세권 사업 — 지구단위계획 변경 수반(입력)' : '지구단위계획 결정·변경 필요(입력)') : N('입력 없음')},
- {id:'integ', cat:'심의', name:'통합심의', law:'주택법 제18조 [시행 2026.9.8.] / 도시정비법 제50조의2 [시행 2026.7.1.]', conf:'A',
-  memo:'주택법: 사업계획승인 신청자가 통합심의를 신청하면 의무. 대상은 건축·도시관리계획·광역교통·교통영향평가·경관·교육환경·성능위주설계·재해영향평가. 도시정비법: 사업시행계획인가 관련 심의가 둘 이상이면 통합심의 의무(위 항목에 환경영향평가 포함).',
-  fn: c => c.path==='housing' ? Y('사업계획승인 대상 → 통합심의 신청 시 의무') : c.path==='redev' ? Y('사업시행계획인가 관련 심의 둘 이상 → 통합심의 의무') : N('건축허가 사업 — 분야별 개별 심의')},
+ {id:'integ', cat:'심의', name:'통합심의', late:true, law:'주택법 제18조①② (법률 제21902호, 시행 2026.9.8., 확인 2026-11-05) / 도시정비법 제50조의2① (법률 제21447호, 시행 2026.7.1., 확인 2026-11-05)', conf:'A',
+  memo:'주택법: 승인권자는 건축심의·도시·군관리계획·광역교통 개선대책·교통영향평가·경관심의·교육환경평가·성능위주설계 평가·재해영향평가 등을 통합심의할 수 있고(①), 사업계획승인 신청자가 신청하면 의무(②). 환경영향평가는 목록에 없음. 도시정비법: 건축(특별건축구역 포함)·경관·교육환경평가·도시·군관리계획·교통영향평가·성능위주설계 평가·재해영향평가·환경영향평가 등 사업시행계획인가 관련 심의가 둘 이상 필요하면 통합심의 의무. 건축법 경로: 통합심의 규정 없음 — 분야별 개별 심의.',
+  fn: (c,V) => {
+    if (c.path==='housing') return Y('사업계획승인 대상 → 통합심의를 신청하면 의무 (주택법 제18조② 신청 시 의무, ① 승인권자 재량)');
+    if (c.path!=='redev') return N('건축허가 사업 — 분야별 개별 심의');
+    const L = INTEG_BUNDLE.filter(([, ids]) => ids.some(i => V[i] && (V[i].s==='Y' || V[i].s==='Q'))).map(([nm]) => nm);
+    return L.length>=2 ? Y(`사업시행계획인가 관련 심의 ${L.length}개 (${L.join('·')}) ≥ 2 → 통합심의 의무 (도시정비법 제50조의2①)`)
+      : Q(`관련 심의가 둘 미만 (${L.join('·') || '없음'}) — 통합심의 의무 아님, 확인`);
+  }},
  {id:'bc_metro', cat:'심의', name:'건축위원회 심의 (시·도)', law:'건축법 제11조, 시행령 제8조 · 서울시 건축조례 제7조①1다 [시행 2026.3.30.]', conf:'A',
   memo:'서울: 심의대상건축물(다중이용건축물·시가지/특화경관지구 내·분양 목적) 중 연면적 합계 10만㎡ 이상 또는 21층 이상 → 시 건축위원회. 다른 시·도는 건축조례로 확인(21층·10만㎡ 이상은 시행령 제8조 광역 허가·도지사 승인 대상).',
   fn: c => {
@@ -327,7 +382,7 @@ const RULES = [
     if (V.bc_metro.s==='Y') return N('시·도 건축위원회 심의 대상');
     if (c.multi) return Y(c.floors>=16 ? `다중이용건축물: 지상 ${c.floors}층 ≥ 16층` : `다중이용건축물: ${USES[c.use]} 연면적 ${fA(c.gfa)} ≥ 5,000.00㎡`);
     if (c.isSeoul) {
-      if (c.f.scenic) return Y('시가지·특화경관지구 내 건축물(입력)');
+      if (c.f.scenicZone) return Y('시가지·특화경관지구 등 경관지구 내 건축물(입력)');
       if (c.sale) {
         if (c.res && c.hh>=30) return Y(`분양 공동주택 ${c.hh}세대 ≥ 30세대`);
         if (c.use==='officetel' && c.hh>=50) return Y(`분양 오피스텔 ${c.hh}실 ≥ 50실`);
@@ -353,22 +408,24 @@ const RULES = [
   memo:'서울: ①경관지구 내 4층 또는 16m 초과·건폐율 40% 초과 ②중점경관관리구역 내 경관계획이 정한 건축물 ③지자체·공공기관·지방공기업이 짓는 허가(협의) 대상 ④다중이용건축물(16층 이상 등). 주택건설사업 등 개발사업 경관심의(경관법 제27조)는 원문 미대조.',
   fn: c => {
     if (c.isSeoul) {
-      if (c.f.scenic) return Y('경관지구·중점경관관리구역 내(입력) — 높이·건폐율 요건 확인');
+      if (c.f.scenicZone) return Y('경관지구 내(입력) — 4층 또는 16m 초과·건폐율 40% 초과 요건 확인');
+      if (c.f.scenicKey) return Q('중점경관관리구역 내(입력) — 경관계획이 정한 건축물인지 확인');
       if (c.pub) return Y('공공기관 등이 짓는 허가(협의) 대상 건축물');
       if (c.multi) return Y(c.floors>=16 ? `다중이용건축물: 지상 ${c.floors}층 ≥ 16층` : `다중이용건축물: ${USES[c.use]} ≥ 5,000.00㎡`);
       return N('서울 경관조례 제24조 기준 미해당');
     }
-    if (c.f.scenic) return Y('경관지구·중점경관관리구역 내(입력)');
+    if (c.f.scenicZone) return Y('경관지구 내(입력) — 조례 요건 확인');
+    if (c.f.scenicKey) return Q('중점경관관리구역 내(입력) — 경관계획이 정한 건축물인지 확인');
     return (c.multi || c.pub) ? Q(`${c.sido} 경관조례 기준 확인`) : N('일반적 기준 미만 — 조례 확인 권장');
   }},
- {id:'traffic', cat:'영향평가', name:'교통영향평가', law:'도시교통정비 촉진법 시행령 [별표1] (2024.2.6. 개정) · 서울시 교통영향평가에 관한 조례 [별표] (2024.3.26. 개정)', conf:'A',
-  memo:'법령(도시교통정비지역): 공동주택 60,000㎡, 일반업무 25,000㎡, 숙박 40,000㎡, 상점 11,000㎡, 제2종 근생 15,000㎡, 문화집회 15,000㎡, 정비사업 부지 5만㎡. 서울 조례: 아파트 50,000㎡, 일반업무 20,000㎡, 숙박 20,000㎡, 상점 7,000㎡, 제2종 근생 8,000㎡, 문화집회 8,000㎡, 정비사업 부지 2.5만㎡(서울형 정비지원계획 5만㎡), 부설주차장 설치제한지역 3,000㎡ 이상(주택·오피스텔 제외). 복합용도: Σ(용도별 연면적÷기준)×10,000 ≥ 10,000.',
+ {id:'traffic', cat:'영향평가', name:'교통영향평가', law:'도시교통정비 촉진법 시행령 [별표1] (2024.2.6. 개정) · 서울시 교통영향평가에 관한 조례 [별표] (2024.3.26. 개정) · 도시교통정비 촉진법 제15조④ (법률 제21447호, 시행 2026.7.1., 확인 2026-11-05) 시·도 또는 인구 50만 이상 대도시 조례 위임 · 같은 법 시행령 제13조의2⑦1 별표 1에서 정한 규모의 100분의 50 이상 (대통령령 제36683호, 시행 2026.9.15., 확인 2026-11-05)', conf:'A',
+  memo:'법령(도시교통정비지역): 공동주택 60,000㎡, 일반업무 25,000㎡, 숙박 40,000㎡, 상점 11,000㎡, 제2종 근생 15,000㎡, 문화집회 15,000㎡, 정비사업 부지 5만㎡. 서울 조례: 아파트 50,000㎡, 일반업무 20,000㎡, 숙박 20,000㎡, 상점 7,000㎡, 제2종 근생 8,000㎡, 문화집회 8,000㎡, 정비사업 부지 2.5만㎡(서울형 정비지원계획 5만㎡), 부설주차장 설치제한지역 3,000㎡ 이상(주택·오피스텔 제외). 복합용도: Σ(용도별 연면적÷기준)×10,000 ≥ 10,000. 서울 밖: 별표 1 기준으로 판정하며 시·도·50만 이상 대도시 조례 확인.',
   fn: c => {
     const S = c.isSeoul;
-    const redevA = S ? 25000 : 50000;
-    if (c.type==='redev' && c.area>=redevA) return Y(`${S?'서울 조례: ':''}정비사업 부지면적 ${fA(c.area)} ≥ ${redevA.toLocaleString('ko-KR')}.00㎡`);
-    const TH = S ? { apt:50000, officetel:20000, retail:7000, hotel:20000, culture:8000, nonres:8000 } : { apt:60000, officetel:25000, retail:11000, hotel:40000, culture:15000, nonres:15000 };
-    const tag = S ? '서울 조례: ' : '';
+    const redevA = S ? TRAFFIC_REDEV.seoul : TRAFFIC_REDEV.nat;
+    const tag = S ? '서울 조례: ' : '별표 1 기준 (시·도·50만 이상 대도시 조례 확인): ';
+    if (c.type==='redev' && c.area>=redevA) return Y(`${tag}정비사업 부지면적 ${fA(c.area)} ≥ ${redevA.toLocaleString('ko-KR')}.00㎡`);
+    const TH = S ? TRAFFIC_TH.seoul : TRAFFIC_TH.nat;
     if (c.use==='mixed') {
       const rg = c.gfa*c.resRatio/100, ng = c.gfa - rg;
       const swa = (rg/TH.apt + ng/TH.nonres) * 10000;
@@ -383,10 +440,11 @@ const RULES = [
       return N(why);
     }
     if (S && c.gfa>=3000) return Q(`${USES[c.use]} — 조례 별표 용도별 기준·부설주차장 설치제한지역 여부 확인`);
-    return c.gfa>=10000 ? Q(`${USES[c.use]} — 별표1 용도별 기준 확인`) : N('용도별 기준 미만으로 추정 — 별표 확인 권장');
+    const pre = S ? '' : tag;
+    return c.gfa>=10000 ? Q(`${pre}${USES[c.use]} — 별표1 용도별 기준 확인`) : N(`${pre}용도별 기준 미만으로 추정 — 별표 확인 권장`);
   }},
- {id:'env', cat:'영향평가', name:'환경영향평가', law:'환경영향평가법 시행령 [별표3] · 서울시 환경영향평가 조례 [별표1] (2024.9.30. 개정)', conf:'A',
-  memo:'법령: 정비사업·주택건설사업 사업면적 30만㎡ 이상(서울 조례 상한으로 간접 확인). 서울 조례: 건축물 연면적 합계 10만㎡ 이상, 정비사업·주택건설사업(대지조성 포함) 사업면적 9만㎡ 이상 30만㎡ 미만.',
+ {id:'env', cat:'영향평가', name:'환경영향평가', law:'환경영향평가법 시행령 [별표3] · 서울시 환경영향평가 조례 [별표1] (2024.9.30. 개정) · 환경영향평가법 제42조 시·도 또는 인구 50만 이상 시 조례 위임 (법률 제21065호, 시행 2025.10.23., 확인 2026-11-05)', conf:'A',
+  memo:'법령: 정비사업·주택건설사업 사업면적 30만㎡ 이상(서울 조례 상한으로 간접 확인). 서울 조례: 건축물 연면적 합계 10만㎡ 이상, 정비사업·주택건설사업(대지조성 포함) 사업면적 9만㎡ 이상 30만㎡ 미만. 조례 위임의 시행령 범위는 미확인.',
   fn: c => {
     if (c.area>=300000 && c.path!=='permit') return Y(`사업면적 ${fA(c.area)} ≥ 300,000.00㎡`);
     if (c.isSeoul) {
@@ -465,7 +523,8 @@ const RULES = [
  {id:'longlife', cat:'인증·성능', name:'장수명주택 인증', law:'주택법 제38조③, 주택건설기준 등에 관한 규정 제65조의2 [시행 2026.9.8.]', conf:'A',
   memo:'1,000세대 이상 주택 공급 시 일반등급 이상. 우수등급 이상이면 건폐율·용적률 완화 가능.',
   fn: c => {
-    if (!c.res || c.hh<1000) return N(`${c.hh}세대 < 1,000세대`);
+    if (!c.res) return N(`${USES[c.use]} — 공동주택 아님`);
+    if (c.hh<1000) return N(`${c.hh}세대 < 1,000세대`);
     return c.path==='housing' ? Y(`${c.hh}세대 ≥ 1,000세대`) : Q(`${c.hh}세대 — ${c.path==='redev'?'정비사업':'건축허가'} 적용 여부 확인`);
   }},
  {id:'perf', cat:'인증·성능', name:'공동주택성능등급 표시', law:'주택법 제39조, 주택건설기준 등에 관한 규정 제58조 [시행 2026.9.8.]', conf:'A',
@@ -491,10 +550,10 @@ const RULES = [
   fn: c => c.f.heritage ? Q('국가유산 주변(입력) — 보존지역·허용기준 확인') : N('입력 없음')}
 ];
 const RULE = Object.fromEntries(RULES.map(r => [r.id, r]));
-const FIELD_LABEL = { gfa:'연면적', maxBld:'동 연면적', floors:'지상층수', basements:'지하층수', depth:'굴착깊이', hh:'세대수', height:'최고높이', resRatio:'주택비율', area:'사업면적', site:'대지면적', owner:'사업 주체', school:'학교 200m 이내', subway:'지하역사 연결', heritage:'국가유산 주변', scenic:'경관지구', dup:'지구단위계획 변경', sale:'분양 목적' };
+const FIELD_LABEL = { gfa:'연면적', maxBld:'동 연면적', floors:'지상층수', basements:'지하층수', depth:'굴착깊이', hh:'세대수', height:'최고높이', resRatio:'주택비율', area:'사업면적', site:'대지면적', owner:'사업 주체', school:'학교 200m 이내', subway:'지하역사 연결', heritage:'국가유산 주변', scenicZone:'경관지구', scenicKey:'중점경관관리구역', dup:'지구단위계획 변경', sale:'분양 목적' };
 // 판정에 쓰는 입력값. 이 값이 "확인 필요"이면 비대상 판정을 확인 필요로 바꾼다
-const NEEDS = { hap:['hh','resRatio'], bc_metro:['floors','gfa'], bc_local:['floors','gfa','hh'], excav:['basements','depth'], struct:['floors'],
-  landscape:['floors','gfa','owner','scenic'], traffic:['gfa','resRatio'], env:['gfa'], edu:['school','floors','gfa','hh'], ugs:['basements','depth'], ugs_s:['basements','depth'],
+const NEEDS = { hap:['hh','resRatio'], bc_metro:['floors','gfa','scenicZone'], bc_local:['floors','gfa','hh','scenicZone'], excav:['basements','depth'], struct:['floors'],
+  landscape:['floors','gfa','owner','scenicZone','scenicKey'], traffic:['gfa','resRatio'], env:['gfa'], edu:['school','floors','gfa','hh'], ugs:['basements','depth'], ugs_s:['basements','depth'],
   safety:['maxBld','gfa','floors'], fire:['floors','gfa','subway'], predis:['floors','subway'], energy:['gfa'], zeb:['gfa','hh','owner'], longlife:['hh'], perf:['hh'],
   pub_green:['owner'], bf:['owner'], heritage2:['heritage'] };
 
@@ -510,9 +569,14 @@ function derive(inp){
     depth, depthEst:!(depthIn>0), hh:Math.round(n('hh')), resRatio:rr, res:inp.use==='apt'||inp.use==='mixed', pub:inp.owner==='public', f:inp.flags||{} };
   c.multi = floors>=16 || (['retail','hotel','culture'].includes(c.use) && c.gfa>=5000);
   c.sale = !!c.f.sale || (c.res && !c.pub);
-  c.bcTarget = c.multi || !!c.f.scenic || c.sale;
-  c.bcTargetWhy = c.multi ? '다중이용건축물' : c.f.scenic ? '경관지구 내 건축물' : '분양 목적 건축물';
-  c.unk = inp.unk || {};
+  c.bcTarget = c.multi || !!c.f.scenicZone || c.sale;
+  c.bcTargetWhy = c.multi ? '다중이용건축물' : c.f.scenicZone ? '경관지구 내 건축물' : '분양 목적 건축물';
+  c.unk = { ...(inp.unk || {}) };
+  for (const k of ['scenicZone','scenicKey']) if (legacyScenic(inp, k)) c.unk[k] = true;
+  // 획지 보기: 사업계획승인 세대수·주택비율은 구역 전체 값 (주택법 시행령 제27조⑤)
+  c.hapSum = inp.hapHh!=null;
+  c.hapHh = c.hapSum ? Math.round(Math.max(0, +inp.hapHh || 0)) : c.hh;
+  c.hapRes = !c.hapSum ? rr : (inp.hapRes==='' || inp.hapRes==null ? 100 : Math.max(0, +inp.hapRes || 0));
   c.buildEst = !!(c.unk.floors || c.unk.basements);
   c.buildMonths = c.buildEst ? 36 : Math.max(8, Math.round(12 + 0.75*floors + 1.5*basements));
   return c;
@@ -521,7 +585,7 @@ function judge(inp){
   const c = derive(inp), V = {};
   V.hap = RULE.hap.fn(c, V);
   c.path = inp.type==='redev' ? 'redev' : (V.hap.s==='Y' ? 'housing' : 'permit');
-  for (const r of RULES) if (r.id!=='hap') V[r.id] = r.fn(c, V);
+  for (const r of RULES) if (r.id!=='hap' && !r.late) V[r.id] = r.fn(c, V);
   for (const id in NEEDS) {
     if (!V[id] || V[id].s!=='N') continue;
     if (id==='hap' && c.type==='redev') continue;
@@ -529,15 +593,35 @@ function judge(inp){
     const miss = NEEDS[id].filter(k => c.unk[k] && !(k==='depth' && !c.unk.basements) && !(k==='basements' && !c.unk.depth) && !(k==='maxBld' && !c.unk.gfa));
     if (miss.length) V[id] = Q(`확인 필요 입력값: ${[...new Set(miss.map(k => FIELD_LABEL[k]||k))].join('·')} — 현재 입력 기준으로는 "${V[id].r}"`);
   }
+  for (const r of RULES) if (r.late) V[r.id] = r.fn(c, V); // 다른 판정이 모두 끝난 뒤(보정 포함) 계산: 통합심의는 묶이는 심의 개수를 센다
   return { c, V };
 }
 function effective(p){
-  const { c, V } = judge(p.input), E = {};
-  for (const r of RULES) E[r.id] = (p.overrides||{})[r.id] || V[r.id].s;
+  const { c, V } = judge(p.input), E = {}, ov = p.overrides || {};
+  // 통합심의 대상 개수는 사용자가 직접 지정한 판정도 따른다
+  if (Object.keys(ov).length) V.integ = RULE.integ.fn(c, Object.fromEntries(RULES.map(r => [r.id, ov[r.id] ? { ...V[r.id], s:ov[r.id] } : V[r.id]])));
+  for (const r of RULES) E[r.id] = ov[r.id] || V[r.id].s;
   return { c, V, E };
 }
 
 /* ---------- 일정 생성 ---------- */
+/* 정비사업 단계 기본 기간: 실적 집계 permit-timeline/docs/일정기간_실적집계_20261105.md (집계값·출처만, 원자료 없음) */
+const DUR_SRC = '서울시 정비사업 정보몽땅 추진경과 집계 (2020년 이후, 조회 2026-11-05)';
+const DUR_DATA = {
+  j1:     { fact:'실적 부족(정비구역 지정신청 → 지정고시 n10) — 기존 값 유지' },
+  j2:     { dur:18,   fact:'실적 중앙값 547일 (25~75% 270~946일, n56) — 정비구역 지정고시 → 조합설립인가' },
+  s2:     { dur:48.5, fact:'실적 중앙값 1,470일 (25~75% 998~1,770일, n74) ≈ 48.5개월 — 조합설립인가 → 사업시행 인가신청 (통합심의는 신청 뒤 단계라 기간에서 빼지 않음)' },
+  g5:     { fact:'인가 신청 전에 여는 총회 의결 마일스톤 (사업시행계획서 작성·변경)', legal:'법정: 도시정비법 제50조⑤ 사업시행계획서 작성·변경 시 총회 의결 (시행 2026.7.1., 확인 2026-11-05)' },
+  p_req:  { dur:0.5,  fact:'실적 중앙값 14일 (25~75% 8~20일, n36) — 사업시행 총회 → 인가신청', legal:'법정: 총회 의결 뒤 신청 (도시정비법 제50조⑤, 시행 2026.7.1., 확인 2026-11-05) — 준비 기간은 원문에 없음' },
+  p_pub:  { dur:1,    fact:'서울 실적 없음 — 법정 기간으로 갈음 (공람 14일 이상, 관계기관 협의 30일 이내 ≈ 1개월)', legal:'법정: 도시정비법 제56조① 14일 이상 공람, 제57조④ 협의 요청 30일 이내 의견 제출(없으면 협의한 것으로 봄) (시행 2026.7.1., 확인 2026-11-05) · 시행령 제49조 공람 공고·통지 (대통령령 제36424호, 시행 2026.7.1., 확인 2026-11-05)' },
+  r_int:  { fact:'상정·의결 날짜 실적 없음 — 기존 값 유지. 통합심의 운영절차: 관련부서 협의 20일 이상, 개최 10일 전 상정, 개최 후 14일 이내 결과 통보 (정보몽땅)', legal:'법정: 도시정비법 제50조의2 사업시행계획인가 관련 심의가 둘 이상이면 통합심의 (시행 2026.7.1., 확인 2026-11-05)' },
+  p_main: { dur:2.5,  fact:'실적 중앙값 192일 (25~75% 133~316일, n97) = 6.5개월 중 공람·협의 1개월, 통합심의 3개월을 제외한 2.5개월 (공람·협의 + 통합심의 + 인가 = 6.5개월) — 사업시행 인가신청 → 인가(최초)', legal:'법정: 도시정비법 제50조④ 60일 이내 통보 (시행 2026.7.1., 확인 2026-11-05)' },
+  p_gosi: { fact:'실적 중앙값 3일 (25~75% 0~7일, n100) — 사업시행 인가 → 인가고시, 마일스톤으로 표시', legal:'법정: 도시정비법 제50조⑨ 인가 시 지방자치단체 공보에 고시 (시행 2026.7.1., 확인 2026-11-05)' },
+  j4:     { dur:27.5, fact:'구간 중앙값 합 842일 = 사업시행인가 → 관리처분 인가신청 727일 (25~75% 455~1,009일, n77) + 인가신청 → 인가 115일 (25~75% 88~154일, n87)' },
+  j5:     { dur:38.5, fact:'실적 중앙값 1,176일 (25~75% 875~1,614일, n64) — 관리처분인가 → 착공신고' }
+};
+const durOf = id => DUR_DATA[id].dur;
+const noteOf = id => { const d = DUR_DATA[id]; return `${d.fact} · 출처: ${DUR_SRC}` + (d.legal ? ` · ${d.legal}` : ''); };
 function buildRows(c, E){
   const rows = [];
   const has = id => E[id]==='Y' || E[id]==='Q', tent = id => E[id]==='Q';
@@ -554,27 +638,31 @@ function buildRows(c, E){
     pre = 'u4';
   }
   if (P==='redev') {
-    add('j1','redev','정비계획 수립·정비구역 지정',12,['s1'],{note:'도시계획위원회 심의 포함', owner:'조합·구청'});
-    add('j2','redev','조합설립 인가',6,['j1'],{owner:'조합'});
+    add('j1','redev','정비계획 수립·정비구역 지정',12,['s1'],{note:'도시계획위원회 심의 포함 · ' + noteOf('j1'), owner:'조합·구청'});
+    add('j2','redev','조합설립 인가',durOf('j2'),['j1'],{owner:'조합',note:noteOf('j2')});
     pre = 'j2';
   }
-  add('s2','plan', P==='redev' ? '건축설계 (사업시행계획 도서)' : '중간설계 (심의도서)', P==='redev' ? 6 : 4, [pre], {owner:'설계'});
-  const A = (rid, id, name, dur, deps) => { if (has(rid)) add(id,'assess',name,dur,deps,{rule:rid,tent:tent(rid)}); };
+  add('s2','plan', P==='redev' ? '건축설계·시공자 선정 (사업시행계획 도서)' : '중간설계 (심의도서)', P==='redev' ? durOf('s2') : 4, [pre], P==='redev' ? {owner:'설계',note:noteOf('s2')} : {owner:'설계'});
+  const bundNote = () => '심의는 통합심의에서 (' + (P==='redev' ? '도시정비법 제50조의2①' : '주택법 제18조①') + ')';
+  const A = (rid, id, name, dur, deps, bound) => { /* 묶이는 영향평가: 6번째 인자가 있고 경로가 건축허가가 아니면 '…평가서 작성' 막대, 심의는 통합심의에서 (D-02, D-07) */ if (has(rid)) { const b = bound && P!=='permit'; add(id,'assess',b?bound:name,dur,deps,{rule:rid,tent:tent(rid),note:b?bundNote():''}); } };
   A('heritage','a_her','매장유산 유존지역 확인',1,['s1']);
-  A('traffic','a_tr','교통영향평가',4,[pre]);
-  A('env','a_env','환경영향평가 (초안·본안 협의)',10,[pre]);
-  A('senv','a_senv','소규모 환경영향평가',3,[pre]);
-  A('disaster','a_dis','재해영향평가 등의 협의',3,[pre]);
-  A('edu','a_edu','교육환경평가',4,[pre]);
+  A('traffic','a_tr','교통영향평가',4,[pre],'교통영향평가서 작성');
+  A('env','a_env','환경영향평가 (초안·본안 협의)',10,[pre],P==='redev'&&'환경영향평가서 작성 (초안 의견수렴 포함)');
+  A('senv','a_senv','소규모 환경영향평가',3,[pre],P==='redev'&&'소규모 환경영향평가서 작성');
+  A('disaster','a_dis','재해영향평가 등의 협의',3,[pre],'재해영향평가서 작성');
+  A('edu','a_edu','교육환경평가',4,[pre],'교육환경평가서 작성');
   A('ugs','a_ugs','지하안전평가',4,[pre]);
   A('ugs_s','a_ugss','소규모 지하안전평가',2,[pre]);
   A('heritage2','a_her2','국가유산 현상변경 허가',3,[pre]);
-  if (P!=='permit' && has('fire')) add('a_fire','assess','성능위주설계 도서 작성',2,[pre],{rule:'fire',tent:tent('fire')});
+  if (P!=='permit' && has('fire')) add('a_fire','assess','성능위주설계 도서 작성',2,[pre],{rule:'fire',tent:tent('fire'),note:bundNote()});
   let rev;
   if (P==='housing' || P==='redev') {
     const H = P==='housing';
-    const inner = ['건축', has('landscape')&&'경관', has('traffic')&&'교통', has('excav')&&'굴토', H&&has('dup')&&'도시계획', has('edu')&&'교육환경', has('disaster')&&'재해', has('fire')&&'성능위주', P==='redev'&&has('env')&&'환경'].filter(Boolean).join('·');
-    add('r_int','review',`통합심의 (${inner})`,3, ['s2','a_tr','a_edu','a_dis','a_fire'].concat(H ? [] : ['a_env']),{rule:'integ', note: P==='redev'?'도시정비법 제50조의2':'주택법 제18조'});
+    const inner = ['건축', has('landscape')&&'경관', has('traffic')&&'교통', has('excav')&&'굴토', H&&has('dup')&&'도시계획', has('edu')&&'교육환경', has('disaster')&&'재해', has('fire')&&'성능위주', P==='redev'&&(has('env')||has('senv'))&&'환경'].filter(Boolean).join('·');
+    if (P==='redev') add('g5','redev','사업시행계획 총회 의결',0,['s2','a_tr','a_edu','a_dis','a_fire','a_env','a_senv','a_ugs','a_ugss','a_her','a_her2'],{ms:true, owner:'조합', note:noteOf('g5')});
+    if (P==='redev') add('p_req','permit','인가 신청 준비 (총회 → 신청)',durOf('p_req'),['g5'],{owner:'조합', note:noteOf('p_req')});
+    if (P==='redev') add('p_pub','permit','공람·관계기관 협의',durOf('p_pub'),['p_req'],{owner:'인허가', note:noteOf('p_pub')});
+    add('r_int','review',`통합심의 (${inner})`,3, P==='redev' ? ['p_pub'] : ['s2','a_tr','a_edu','a_dis','a_fire'],{rule:'integ', note: P==='redev'?noteOf('r_int'):'주택법 제18조'});
     rev = 'r_int';
   } else {
     let last = 's2';
@@ -594,14 +682,15 @@ function buildRows(c, E){
   B('predis','p_pre','사전재난영향성 검토 협의',2);
   B('longlife','c_long','장수명주택 인증',2,'cert');
   const mainName = P==='housing' ? '주택건설사업계획승인' : P==='redev' ? '사업시행계획인가' : '건축허가';
-  add('p_main','permit',mainName, P==='redev' ? 3 : 2, [rev,...pp,'a_env','a_senv','a_dis','a_edu','a_ugs','a_ugss','a_her','a_her2'], {owner:'인허가', rule: P==='housing'?'hap':null});
+  add('p_main','permit',mainName, P==='redev' ? durOf('p_main') : 2, [rev,...pp,'a_env','a_senv','a_dis','a_edu','a_ugs','a_ugss','a_her','a_her2'], {owner:'인허가', rule: P==='housing'?'hap':null, note: P==='redev' ? noteOf('p_main') : ''});
+  if (P==='redev') add('p_gosi','permit','사업시행계획인가 고시',0,['p_main'],{ms:true, owner:'인허가', note:noteOf('p_gosi')});
   const subs = ['energy','zeb'].filter(has).map(id => RULE[id].name);
-  if (subs.length) add('c_sub','cert',`신청 시 제출: ${subs.join('·')}`,0,[rev],{ms:true, rule:'energy'});
+  if (subs.length) add('c_sub','cert',`신청 시 제출: ${subs.join('·')}`,0,[P==='redev' ? 'p_req' : rev],{ms:true, rule:'energy'});
   add('s3','plan','실시설계',4,[P==='redev' ? 'p_main' : rev],{owner:'설계'});
   let sd = ['p_main','s3'];
   if (P==='redev') {
-    add('j4','redev','관리처분계획 인가',8,['p_main'],{owner:'조합'});
-    add('j5','redev','이주·철거',12,['j4'],{owner:'조합'});
+    add('j4','redev','관리처분계획 인가',durOf('j4'),['p_gosi'],{owner:'조합',note:noteOf('j4')});
+    add('j5','redev','이주·철거',durOf('j5'),['j4'],{owner:'조합',note:noteOf('j5')});
     sd = ['j5','s3'];
   }
   add('b0','build','착공 (착공신고)',0,sd,{ms:true});
@@ -619,7 +708,7 @@ function propagate(rows, reset){
   for (const r of order) {
     const ds = r.deps.map(d => m.get(d)).filter(Boolean);
     const need = ds.length ? Math.max(...ds.map(endOf)) : 0;
-    r.start = reset ? need : Math.max(r.start, need);
+    r.start = reset && ds.length ? need : Math.max(r.start, need); // reset: 선행 있는 행은 선행 끝에 붙인다(당기기 포함), 선행 없는 행은 그대로
   }
 }
 function topo(rows){
@@ -627,6 +716,366 @@ function topo(rows){
   const visit = (r, stack) => { if (seen.has(r.id) || stack.has(r.id)) return; stack.add(r.id);
     r.deps.forEach(d => m.get(d) && visit(m.get(d), stack)); stack.delete(r.id); seen.add(r.id); out.push(r); };
   rows.forEach(r => visit(r, new Set()));
+  return out;
+}
+
+/* parcel:begin */
+// 획지(구역 안 대지) 순수 로직. document·window·S를 쓰지 않는다 (parcel-check.js가 이 구간을 잘라 node에서 시험).
+function parcelsOf(inp){
+  const a = inp && inp.parcels;
+  return Array.isArray(a) ? a.filter(x => x && typeof x==='object' && typeof x.id==='string' && x.id!=='') : [];
+}
+// 기반시설(도로·공원 등)은 판정·일정 대상이 아니라 면적 검산에만 쓴다.
+const INFRA_TYPES = [['road','도로'], ['park','공원'], ['open','공공공지'], ['office','공공청사'], ['etc','기타']];
+function infraOf(inp){
+  const a = inp && inp.infra;
+  return Array.isArray(a) ? a.filter(x => x && typeof x==='object' && typeof x.id==='string' && x.id!=='') : [];
+}
+function noticeOf(inp){
+  const n = inp && inp.notice, ok = n && typeof n==='object' && !Array.isArray(n);
+  const s = k => (ok && typeof n[k]==='string') ? n[k] : '';
+  return { parcel:s('parcel'), infra:s('infra') };
+}
+// shortcut: 소수 셋째 자리 이하는 반올림, 입력 칸이 0.01 단위라 충분 — 더 정밀한 값이 필요해지면 문자열 십진 계산으로 교체
+function toCents(v){ const n = +v; return Number.isFinite(n) ? Math.max(0, Math.round(n * 100)) : 0; }
+// 면적은 정수 센트로 합산·비교한다 (0.1 + 0.2 대 0.3 같은 부동소수 오차 방지). 고시값이 비었거나 숫자가 아니면 noticeC·diffC는 null.
+function parcelTotals(inp){
+  const sum = list => list.reduce((s, x) => s + toCents(x.area), 0);
+  const mk = (n, sumC, raw) => {
+    const has = raw!=null && String(raw).trim()!=='' && Number.isFinite(+raw), noticeC = has ? toCents(raw) : null;
+    return { n, sumC, noticeC, diffC: has ? sumC - noticeC : null };
+  };
+  const ps = parcelsOf(inp), is = infraOf(inp), nt = noticeOf(inp), pc = sum(ps), ic = sum(is);
+  return { parcel:mk(ps.length, pc, nt.parcel), infra:mk(is.length, ic, nt.infra), total:mk(ps.length + is.length, pc + ic, inp && inp.area) };
+}
+function parcelSumHtml(inp, key){
+  const t = parcelTotals(inp)[key];
+  const label = { parcel:'획지 합계', infra:'기반시설 합계', total:'구역 합계 (획지+기반시설)' }[key];
+  const target = key==='total' ? '사업(구역)면적' : '고시 소계';
+  let d;
+  if (t.n===0 && t.noticeC===null) d = '<span class="note">입력 없음</span>';
+  else if (t.noticeC===null) d = `<span class="note">${esc(target)} 미입력 — 차이를 계산하지 않음</span>`;
+  else if (t.diffC===0) d = '<span class="pcdiff ok">일치</span>';
+  else d = `<span class="pcdiff">차이 ${esc(fA(Math.abs(t.diffC)/100))} (합계가 ${esc(target)}보다 ${t.diffC<0 ? '적음' : '많음'})</span>`;
+  return `${esc(label)} <b class="num">${esc(fA(t.sumC/100))}</b> <span class="note">(${esc(t.n)}개)</span> ${d}`;
+}
+// ---- 용도지역 중복지정 (국토계획법 제84조) ----
+const ART_84_1 = '국토계획법 제84조① (시행 2026.7.1.)', ART_84_3 = '국토계획법 제84조③ (시행 2026.7.1.)', ART_94 = '시행령 제94조 (시행 2026.9.18.)';
+const ZONE_SCALE = { base:330, strip:660 }; // 가장 작은 부분의 규모 기준(㎡), 도로변 띠 모양 상업지역이면 660
+// 유효 행: 객체, id 문자열, zone이 ZONES 키. 2개 미만이면 중복지정이 아니라 옛 단일 필드를 쓴다.
+function zoneRowsOf(pc){
+  const a = pc && pc.zones;
+  return Array.isArray(a) ? a.filter(x => x && typeof x==='object' && typeof x.id==='string' && x.id!=='' && ZONES.some(z => z[0]===x.zone)) : [];
+}
+function zoneCalc(pc){
+  const rs = zoneRowsOf(pc); if (rs.length < 2) return null;
+  const ratio = v => (v!=null && String(v).trim()!=='' && Number.isFinite(+v)) ? Math.max(0, +v) : null;
+  const rows = rs.map(x => { const z = ZONES.find(q => q[0]===x.zone); return { id:x.id, zone:x.zone, name:z[1], zk:z[2], areaC:toCents(x.area), far:ratio(x.far), bcr:ratio(x.bcr) }; });
+  const totalC = rows.reduce((s, r) => s + r.areaC, 0);
+  const ref = rows.reduce((b, r) => r.areaC > b.areaC ? r : b, rows[0]); // 동률이면 먼저 입력한 행 (D-05, D-06)
+  const tie = ref.areaC > 0 && rows.filter(r => r.areaC===ref.areaC).length > 1;
+  const parts = rows.filter(r => r.areaC > 0); // 면적이 있는 행만 '부분' (C-03)
+  const wsum = k => parts.length && parts.every(r => r[k]!==null) ? parts.reduce((s, r) => s + r.areaC * r[k], 0) : null;
+  const gSum = wsum('far'), bSum = wsum('bcr');
+  const divisorIsParcel = toCents(pc.area) > 0, divisorC = divisorIsParcel ? toCents(pc.area) : totalC; // D-01 분모 = 획지 면적
+  const diffC = divisorIsParcel ? totalC - divisorC : null; // D-08
+  const out = { rows, parts, totalC, diffC, ref, tie, smallest:null, limit:null, strip:false, stripIgnored:false, hasGreen:false, mode:'single', art:null, why:null, divisorC, divisorIsParcel, farAvg:null, bcrAvg:null, gfaC: gSum===null ? null : Math.round(gSum / 100) };
+  if (parts.length < 2) { out.farAvg = parts.length ? parts[0].far : null; out.bcrAvg = parts.length ? parts[0].bcr : null; return out; }
+  const smallest = parts.reduce((b, r) => r.areaC < b.areaC ? r : b, parts[0]); // 동률이면 먼저 입력한 행 (C-06)
+  const hasCom = parts.some(r => r.zk==='com' || r.zk==='comd'); // D-02: 상업지역 행이 있을 때만 660㎡ 체크가 의미
+  const strip = pc.strip===true && hasCom, limit = strip ? ZONE_SCALE.strip : ZONE_SCALE.base;
+  const over = smallest.areaC > limit * 100, hasGreen = parts.some(r => r.zk==='green');
+  const avg = !over && (!hasGreen || smallest.zk==='green'); // D-04
+  const rnd = x => x===null ? null : Math.round(x / divisorC * 100) / 100;
+  Object.assign(out, { smallest, limit, strip, stripIgnored: pc.strip===true && !hasCom, hasGreen, mode: avg ? 'avg' : 'part',
+    art: avg ? (hasGreen ? ART_84_3 + ' — 녹지지역이 가장 작은 부분이고 규모 이하라 제84조① 적용' : ART_84_1) : '제84조① 대상 아님 — 부분별 적용 (확인 필요)',
+    why: avg ? null : over ? `가장 작은 부분 ${fA(smallest.areaC / 100)} > 규모 ${limit}㎡` : '제84조③: 녹지지역이 가장 작은 부분이 아님' });
+  if (avg) { out.farAvg = rnd(gSum); out.bcrAvg = rnd(bSum); }
+  return out;
+}
+function zoneLines(zc){
+  const nf = v => v.toLocaleString('ko-KR', { maximumFractionDigits:2 }), pct = v => v===null ? '미입력 행 있음 — 계산하지 않음' : nf(v) + '%', pv = v => v===null ? '미입력' : nf(v) + '%';
+  const gfa = zc.gfaC===null ? '용적률 미입력 행 있음 — 계산하지 않음' : fA(zc.gfaC / 100);
+  const L = [`판정 기준 용도지역: ${zc.ref.name} (가장 넓은 면적)${zc.tie ? ' — 면적이 같은 용도지역이 둘 이상이라 먼저 입력한 행을 사용' : ''}`];
+  if (zc.mode==='single') L.push(zc.parts.length ? '면적이 있는 용도지역이 1개뿐이라 제84조 적용 대상이 아님' : '면적을 입력한 용도지역이 없어 제84조를 판단하지 않음', `건폐율 ${pct(zc.bcrAvg)} · 용적률 ${pct(zc.farAvg)} · 허용 연면적 ${gfa}`);
+  else {
+    L.push(`적용 조문: ${zc.art}${zc.why ? ` (${zc.why})` : ''}`,
+      `규모 기준 ${zc.limit}㎡ (${ART_94}${zc.strip ? ', 도로변 띠 모양 상업지역' : ''}${zc.stripIgnored ? ', 도로변 체크는 상업지역 행이 없어 적용하지 않음' : ''}) · 가장 작은 부분 ${fA(zc.smallest.areaC / 100)}`);
+    if (zc.mode==='avg') L.push(`건폐율 ${pct(zc.bcrAvg)} · 용적률 ${pct(zc.farAvg)} (${zc.divisorIsParcel ? '면적 가중평균, 분모 = 획지 면적 ' + fA(zc.divisorC / 100) : '면적 가중평균, 획지 면적 미입력 → 지역별 면적 합 사용'}) · 허용 연면적 ${gfa}`);
+    else L.push(...zc.parts.map(r => `${r.name} ${fA(r.areaC / 100)}: 건폐율 ${pv(r.bcr)} · 용적률 ${pv(r.far)}`), `허용 연면적 합계 ${gfa} (= Σ 부분면적 × 지역 용적률)`);
+  }
+  const d = zc.diffC;
+  L.push(`지역별 면적 합계 ${fA(zc.totalC / 100)}` + (d===null ? ' — 획지 면적 미입력, 차이를 계산하지 않음' : d===0 ? ' — 획지 면적과 일치' : ` — 차이 ${fA(Math.abs(d) / 100)} (합계가 획지 면적보다 ${d < 0 ? '적음' : '많음'})`));
+  return L;
+}
+// 결과 영역: 중복지정 획지마다 zoneLines를 줄별 요소로, 마지막 줄(면적 검산 D-08)에 pcdiff
+function zoneResultsHtml(inp){
+  const out = parcelsOf(inp).map(pc => {
+    const zc = zoneCalc(pc); if (!zc) return '';
+    const L = zoneLines(zc), last = L.pop(), cls = zc.diffC===null ? 'note' : zc.diffC===0 ? 'pcdiff ok' : 'pcdiff';
+    return `<div class="pcline"><b>${esc(pc.name || '획지')}</b>${L.map(t => `<span>${esc(t)}</span>`).join('')}<span class="${cls}">${esc(last)}</span></div>`;
+  }).join('');
+  return out || '<span class="note">용도지역을 2개 이상 입력한 획지가 없습니다</span>';
+}
+function zoneBlockHtml(inp){
+  const add = x => `<button class="btn sm" data-add="zones" data-pid="${esc(x.id)}" aria-label="용도지역 추가: ${esc(x.name || '획지')}">+ 용도지역</button>`;
+  const rowsOf = x => {
+    const zr = zoneRowsOf(x), pid = esc(x.id), nm = esc(x.name || '획지');
+    if (zr.length < 2) return `<tr><td>${nm}</td><td colspan="5"><span class="note">중복지정 안 함 — 위 획지 표의 용도지역 1개를 씁니다</span> ${add(x)}</td></tr>`;
+    const at = (r, f) => `data-ls="zones" data-pid="${pid}" data-rid="${esc(r.id)}" data-fd="${f}"`;
+    const n = (r, f, lab) => `<td><input type="number" min="0" step="0.01" class="num" ${at(r, f)} value="${esc(r[f])}" aria-label="${nm} ${lab}"></td>`;
+    return zr.map((r, i) => `<tr><td>${i ? '' : nm}</td><td><select ${at(r, 'zone')} aria-label="${nm} 용도지역">${ZONES.map(z => `<option value="${z[0]}"${z[0]===r.zone ? ' selected' : ''}>${esc(z[1])}</option>`).join('')}</select></td>
+      ${n(r, 'area', '면적(㎡)')}${n(r, 'bcr', '건폐율 한도(%)')}${n(r, 'far', '용적률 한도(%)')}
+      <td><button class="btn sm ghost" data-rm="zones" data-pid="${pid}" data-rid="${esc(r.id)}" aria-label="용도지역 삭제: ${nm} ${i + 1}번째">삭제</button></td></tr>`).join('')
+      + `<tr><td></td><td colspan="5">${add(x)} <label class="note"><input type="checkbox" data-ls="parcels" data-rid="${pid}" data-fd="strip"${x.strip===true ? ' checked' : ''}> 도로변에 띠 모양으로 지정된 상업지역에 걸침 (규모 660㎡, 상업지역 행이 있을 때만 적용)</label></td></tr>`;
+  };
+  return `<div class="tbl-wrap" style="margin-top:14px"><table class="ptbl"><thead><tr><th>획지별 용도지역 중복지정 (선택)</th><th>용도지역</th><th>면적(㎡)</th><th>건폐율 한도(%)</th><th>용적률 한도(%)</th><th></th></tr></thead>
+    <tbody>${parcelsOf(inp).map(rowsOf).join('')}</tbody></table></div>
+    <div data-zres>${zoneResultsHtml(inp)}</div>
+    <p class="note">지역별 건폐율·용적률 한도는 직접 입력합니다(앱에 용도지역별 기본값이 없습니다).</p>
+    <p class="note">용도지역을 2개 이상 입력한 획지는 위 획지 표의 용도지역·용적률·건폐율 칸을 쓰지 않습니다.</p>
+    <p class="note">국토계획법 제84조·시행령 제94조는 2026-11-04에 국가법령정보센터 원문과 대조했습니다. 고도지구·방화지구(제84조① 단서·②)는 입력 항목이 없어 반영하지 않습니다.</p>`;
+}
+// 프로젝트 입력에 획지 값을 덮어쓴 파생 입력. 판정 규칙은 건드리지 않고 effective()가 그대로 읽는다.
+function parcelInput(inp, pc){
+  const zc = zoneCalc(pc), a = +pc.area, own = Number.isFinite(a) && a > 0;
+  const area = own ? String(pc.area) : String(inp.area || inp.site || '');
+  const zone = zc ? zc.ref.zone : pc.zone || inp.zone, zn = (ZONES.find(z => z[0]===zone) || ZONES[4])[1];
+  const input = { ...inp, name:inp.name + ' · ' + (pc.name || '획지'), zone, site:area, area }, unk = { ...(inp.unk || {}) };
+  const basis = [...(zc ? zoneLines(zc) : [`용도지역 ${zn}`]), own ? `대지·사업면적 ${fA(a)}` : '면적 미입력 → 프로젝트 면적 사용'];
+  const drop = (...ks) => ks.forEach(k => delete unk[k]); // 획지가 공급한 값만 '확인 필요'에서 뺀다
+  const num = v => v!=null && String(v).trim()!=='' && Number.isFinite(+v);
+  if (own) drop('area', 'site');
+  if (Object.hasOwn(USES, pc.use || '')) { input.use = pc.use; basis.push(`주용도 ${USES[pc.use]} (획지 입력)`); } else basis.push(`주용도 ${USES[inp.use] || '-'} (프로젝트 값)`);
+  const far = Math.max(0, +pc.far || 0), aEff = Math.max(0, +area || 0);
+  if (num(pc.gfaUp) || num(pc.gfaDown)) {
+    const up = num(pc.gfaUp) ? Math.max(0, +pc.gfaUp) : 0, dn = num(pc.gfaDown) ? Math.max(0, +pc.gfaDown) : 0;
+    input.gfa = (up + dn).toFixed(2); input.maxBld = ''; drop('gfa', 'maxBld');
+    basis.push(`연면적 ${fA(input.gfa)} (획지 입력: 지상 ${fA(up)} + 지하 ${fA(dn)})`);
+  } else if (zc && zc.gfaC > 0) {
+    input.gfa = (zc.gfaC / 100).toFixed(2); input.maxBld = ''; drop('gfa', 'maxBld');
+    basis.push(`연면적 ${fA(input.gfa)} (= Σ 지역별 면적 × 용적률 한도, 지상만 추정)`);
+  } else if (!zc && far > 0 && aEff > 0) {
+    input.gfa = (aEff * far / 100).toFixed(2); input.maxBld = ''; drop('gfa', 'maxBld');
+    basis.push(`연면적 ${fA(input.gfa)} (= 면적 × 용적률 ${far}% 추정, 지상만)`);
+  } else basis.push('연면적은 프로젝트 값');
+  for (const [k, label, unit] of [['floors','지상층수','층'], ['basements','지하층수','층'], ['height','최고높이','m']]) {
+    if (num(pc[k])) { input[k] = pc[k]; drop(k); basis.push(`${label} ${pc[k]}${unit} (획지 입력)`); } else basis.push(`${label} 프로젝트 값`);
+  }
+  // 판정 규칙은 오피스텔 실 수도 hh로 읽는다 (주용도가 오피스텔·업무일 때)
+  const ofc = input.use==='officetel', hk = ofc ? 'ofc' : 'hh';
+  if (num(pc[hk])) { input.hh = pc[hk]; drop('hh'); basis.push(`${ofc ? '오피스텔 실 수' : '세대수'} ${pc[hk]}${ofc ? '실' : '세대'} (획지 입력)`); }
+  else basis.push(`${ofc ? '오피스텔 실 수' : '세대수'} 미입력 → 프로젝트 값 ${inp.hh || 0}`);
+  if (pc.path!=='permit') { // 제27조⑤: 동일 사업주체 전제로 구역 전체 세대수 합산 (건축허가로 지정한 획지는 제외)
+    let sum = 0, cnt = 0, blank = 0; // 주거 획지 중 세대수 빈칸이 있으면 합이 모자라므로 프로젝트 세대수를 쓴다
+    for (const x of parcelsOf(inp)) { const u = Object.hasOwn(USES, x.use || '') ? x.use : inp.use; if (u==='apt' || u==='mixed') { if (num(x.hh)) { sum += Math.max(0, +x.hh); cnt++; } else blank++; } }
+    const useSum = cnt > 0 && blank===0;
+    input.hapHh = String(useSum ? Math.round(sum) : Math.round(Math.max(0, +inp.hh || 0))); input.hapRes = inp.resRatio ?? '';
+    basis.push(`사업계획승인 세대수 ${input.hapHh}세대 (${useSum ? `획지 ${cnt}개 세대수 합` : cnt ? `세대수 빈 주거 획지 ${blank}개 → 프로젝트 세대수` : '프로젝트 세대수'}, 제27조⑤·동일 사업주체 전제)`);
+  }
+  if (num(pc.resRatio)) { input.resRatio = pc.resRatio; drop('resRatio'); basis.push(`주택비율 ${pc.resRatio}% (주상복합일 때만 판정에 쓰임)`); }
+  if (pc.path==='housing' || pc.path==='permit') { input.type = pc.path; basis.push(`인허가 경로 ${TYPES[pc.path]}`); }
+  if (!zc && num(pc.bcr)) basis.push(`건폐율 ${pc.bcr}% (참고 — 현재 판정 기준에 쓰는 항목 없음)`);
+  basis.push('특이사항은 프로젝트 값 사용');
+  input.unk = unk;
+  return { input, basis };
+}
+function parcelView(p, scope){
+  const pc = scope==='all' ? null : parcelsOf(p.input).find(x => x.id===scope);
+  if (!pc) return p;
+  const { input, basis } = parcelInput(p.input, pc);
+  const v = { ...p, input, basis, parcel:pc, readOnly:true };
+  const { c, E } = effective(v);
+  v.rows = buildRows(c, E);
+  return v;
+}
+function scopeBarHtml(inp, scope){
+  const ps = parcelsOf(inp);
+  if (!ps.length) return '';
+  const cur = ps.some(x => x.id===scope) ? scope : 'all';
+  const b = (id, t) => `<button data-scope="${esc(id)}" aria-pressed="${id===cur}">${esc(t)}</button>`;
+  return `<div class="seg scope" role="group" aria-label="보기 범위">${b('all','구역 전체')}${ps.map(x => b(x.id, x.name || '획지')).join('')}</div>`;
+}
+function basisBannerHtml(v){
+  if (!v.readOnly) return '';
+  return `<div class="banner info">${esc(`획지 '${v.parcel.name || '획지'}' 기준 판정 — ${v.basis.join(' · ')}`)}</div>`;
+}
+function parcelSectionHtml(inp){
+  const ps = parcelsOf(inp), is = infraOf(inp), ph = esc(inp.area || inp.site || '');
+  const irow = x => {
+    const id = esc(x.id), at = f => `data-ls="infra" data-rid="${id}" data-fd="${f}"`;
+    return `<tr><td><input type="text" ${at('name')} value="${esc(x.name)}" aria-label="기반시설명"></td>
+      <td><select ${at('type')} aria-label="기반시설 종류">${INFRA_TYPES.map(o => `<option value="${o[0]}"${o[0]===x.type ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select></td>
+      <td><input type="number" min="0" step="0.01" class="num" ${at('area')} value="${esc(x.area)}" aria-label="기반시설 면적(㎡)"></td>
+      <td><button class="btn sm ghost" data-rm="infra" data-rid="${id}" aria-label="기반시설 삭제: ${esc(x.name || '기반시설')}">삭제</button></td></tr>`;
+  };
+  const row = x => {
+    const id = esc(x.id), at = f => `data-ls="parcels" data-rid="${id}" data-fd="${f}"`;
+    const dz = zoneRowsOf(x).length >= 2 ? ' disabled title="용도지역 중복지정 입력 중 — 아래 지역별 행을 씁니다"' : ''; // D-07
+    return `<tr><td><input type="text" ${at('name')} value="${esc(x.name)}" aria-label="획지명"></td>
+      <td><select ${at('zone')}${dz} aria-label="용도지역">${ZONES.map(z => `<option value="${z[0]}"${z[0]===(dz ? zoneCalc(x).ref.zone : x.zone || inp.zone) ? ' selected' : ''}>${esc(z[1])}</option>`).join('')}</select></td>
+      <td><input type="number" min="0" step="0.01" class="num" ${at('area')} value="${esc(x.area)}" placeholder="${ph}" aria-label="면적(㎡)"></td>
+      <td><input type="number" min="0" step="0.01" class="num" ${at('far')}${dz} value="${esc(x.far)}" placeholder="프로젝트"${dz ? "" : " title=\"비우면 프로젝트 값\""} aria-label="용적률(%) — 비우면 프로젝트 값"></td>
+      <td><input type="number" min="0" step="0.01" class="num" ${at('bcr')}${dz} value="${esc(x.bcr)}" aria-label="건폐율(%)"></td>
+      <td><input type="number" min="0" step="0.01" class="num" ${at('resRatio')} value="${esc(x.resRatio)}" placeholder="프로젝트" title="비우면 프로젝트 값" aria-label="주거비율(%) — 비우면 프로젝트 값"></td>
+      <td><select ${at('path')} aria-label="인허가 경로">${[['', '프로젝트 유형 따름'], ['housing', '사업계획승인 (주택법)'], ['permit', '건축허가 (건축법)']].map(o => `<option value="${o[0]}"${o[0]===(x.path || '') ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select></td>
+      <td><button class="btn sm ghost" data-rm="parcels" data-rid="${id}" aria-label="획지 삭제: ${esc(x.name || '획지')}">삭제</button></td></tr>`;
+  };
+  const drow = x => {
+    const id = esc(x.id), at = f => `data-ls="parcels" data-rid="${id}" data-fd="${f}"`;
+    const n = (f, lab, step) => `<td><input type="number" min="0" step="${step}" class="num" ${at(f)} value="${esc(x[f])}" placeholder="프로젝트" aria-label="${esc(x.name || '획지')} ${lab} — 비우면 프로젝트 값"></td>`;
+    return `<tr><td>${esc(x.name || '획지')}</td>
+      <td><select ${at('use')} aria-label="${esc(x.name || '획지')} 주용도">${[['', '프로젝트 값'], ...Object.entries(USES)].map(o => `<option value="${o[0]}"${o[0]===(x.use || '') ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select></td>
+      ${n('gfaUp','지상 연면적(㎡)','0.01')}${n('gfaDown','지하 연면적(㎡)','0.01')}${n('floors','지상층수','1')}${n('basements','지하층수','1')}${n('height','최고높이(m)','0.1')}${n('hh','세대수','1')}${n('ofc','오피스텔 실 수','1')}</tr>`;
+  };
+  return `<div class="sec"><h2>구역 안 획지 · 기반시설 <small>구역계 아래 획지를 따로 입력하면 판정과 일정을 획지별로 볼 수 있습니다. 입력하지 않으면 프로젝트 전체를 하나의 대지로 판정합니다.</small></h2>
+    <div class="tbl-wrap"><table class="ptbl"><thead><tr><th>획지명</th><th>용도지역</th><th>면적(㎡)</th><th>용적률(%)</th><th>건폐율(%)</th><th>주거비율(%)</th><th>인허가 경로</th><th></th></tr></thead>
+      <tbody>${ps.length ? ps.map(row).join('') : '<tr><td colspan="8" class="note">아직 입력한 획지가 없습니다.</td></tr>'}</tbody></table></div>
+    <div style="margin-top:8px"><button class="btn sm" data-add="parcels">+ 획지</button></div>
+    ${ps.length ? `<div class="tbl-wrap" style="margin-top:14px"><table class="ptbl"><thead><tr><th>획지별 설계개요 (선택)</th><th>주용도</th><th>지상 연면적(㎡)</th><th>지하 연면적(㎡)</th><th>지상층수</th><th>지하층수</th><th>최고높이(m)</th><th>세대수</th><th>오피스텔 실 수</th></tr></thead>
+      <tbody>${ps.map(drow).join('')}</tbody></table></div>` : ''}
+    ${ps.length ? zoneBlockHtml(inp) : ''}
+    <p class="note">획지별 판정은 획지에 입력한 값을 쓰고, 비운 칸은 프로젝트 값을 씁니다. 연면적은 지상+지하 입력이 있으면 그 합, 없으면 면적 × 용적률(지상만 추정), 그것도 없으면 프로젝트 값입니다. 주용도가 오피스텔·업무면 세대수 대신 오피스텔 실 수를 씁니다. 특이사항은 프로젝트 값을 씁니다.</p>
+    ${noticeLine(inp, 'parcel', '획지')}
+    <div class="tbl-wrap" style="margin-top:14px"><table class="ptbl"><thead><tr><th>기반시설명</th><th>종류</th><th>면적(㎡)</th><th></th></tr></thead>
+      <tbody>${is.length ? is.map(irow).join('') : '<tr><td colspan="4" class="note">아직 입력한 기반시설이 없습니다.</td></tr>'}</tbody></table></div>
+    <div style="margin-top:8px"><button class="btn sm" data-add="infra">+ 기반시설</button></div>
+    ${noticeLine(inp, 'infra', '기반시설')}
+    <div class="pcline" data-sum="total">${parcelSumHtml(inp, 'total')}</div>
+    <p class="note">구역 합계는 사업(구역)면적 입력값과 비교합니다. 기반시설은 판정·일정 대상이 아니라 면적 검산에만 씁니다.</p></div>`;
+}
+// 합계 줄 + 고시 소계 입력 (면적 검산)
+function noticeLine(inp, key, name){
+  return `<div class="pcline"><span data-sum="${key}">${parcelSumHtml(inp, key)}</span>
+    <label class="note">고시 소계(㎡) <input type="number" min="0" step="0.01" class="num" data-nt="${key}" value="${esc(noticeOf(inp)[key])}" aria-label="${name} 고시 소계(㎡)"></label></div>`;
+}
+// 참고사항 표 (phase 5). 판정·일정에는 쓰지 않고 표시만 한다. 모양이 틀린 값은 버리고, RULES에 없는 rule은 ''로 본다.
+function refsOf(inp){
+  const a = inp && inp.refs, s = v => typeof v==='string' ? v : '';
+  return Array.isArray(a) ? a.filter(x => x && typeof x==='object' && typeof x.id==='string' && x.id!=='')
+    .map(x => ({ id:x.id, item:s(x.item), value:s(x.value), source:s(x.source), date:s(x.date), rule:RULES.some(r => r.id===x.rule) ? x.rule : '' })) : [];
+}
+// 판정 항목 하나에 연결된 참고 줄들 (항목·값 둘 다 비면 제외). 출처·확인일이 비면 그것만, 둘 다 비면 괄호째 뺀다.
+function refsLineHtml(inp, ruleId){
+  return refsOf(inp).filter(x => x.rule===ruleId && (x.item || x.value)).map(x => {
+    const tail = [x.source, x.date].filter(Boolean).join(', ');
+    return `<div class="ref">참고: ${esc([x.item, x.value].filter(Boolean).join(' '))}${tail ? ` (${esc(tail)})` : ''}</div>`;
+  }).join('');
+}
+// 개요 화면 참고 사항 섹션: 표 + 추가 버튼 + 기타 메모(옛 memo 글상자 그대로)
+function refsSectionHtml(inp){
+  const rs = refsOf(inp), cats = [...new Set(RULES.map(r => r.cat))];
+  const opts = x => `<option value=""${x.rule==='' ? ' selected' : ''}>연결 없음</option>` + cats.map(c => `<optgroup label="${esc(c)}">${RULES.filter(r => r.cat===c).map(r => `<option value="${esc(r.id)}"${r.id===x.rule ? ' selected' : ''}>${esc(r.name)}</option>`).join('')}</optgroup>`).join('');
+  const row = x => {
+    const id = esc(x.id), at = f => `data-ls="refs" data-rid="${id}" data-fd="${f}"`;
+    const t = (f, lab, ph) => `<td><input type="text" ${at(f)} value="${esc(x[f])}" placeholder="${ph}" aria-label="참고사항 ${lab}"></td>`;
+    return `<tr>${t('item', '항목', '예: 결정 용적률')}${t('value', '값', '예: 400% 이하')}${t('source', '출처', '예: 고시 제0000-000호')}
+      <td><input type="date" ${at('date')} value="${esc(x.date)}" aria-label="참고사항 확인일"></td>
+      <td><select ${at('rule')} aria-label="참고사항 관련 판정 항목">${opts(x)}</select></td>
+      <td><button class="btn sm ghost" data-rm="refs" data-rid="${id}" aria-label="참고사항 삭제: ${esc(x.item || '참고사항')}">삭제</button></td></tr>`;
+  };
+  return `<div class="sec"><h2>참고 사항 <small>판정에는 쓰지 않는 계획 수치·진행 상황 — 출처와 함께 기록. 판정 항목을 고르면 법령 판정 탭의 그 항목 근거 아래에 보입니다</small></h2>
+    <div class="tbl-wrap"><table class="ptbl"><thead><tr><th>항목</th><th>값</th><th>출처</th><th>확인일</th><th>관련 판정 항목</th><th>삭제</th></tr></thead>
+      <tbody>${rs.length ? rs.map(row).join('') : '<tr><td colspan="6" class="note">아직 입력한 참고사항이 없습니다.</td></tr>'}</tbody></table></div>
+    <div style="margin-top:8px"><button class="btn sm" data-add="refs">+ 참고사항</button></div>
+    <label class="note" for="i_memo" style="display:block;margin-top:14px">기타 메모</label>
+    <textarea class="memo" id="i_memo" data-k="memo" placeholder="예: 결정 용적률 400% 이하 (고시 제0000-000호)">${esc(inp.memo||'')}</textarea></div>`;
+}
+// Excel 사업개요용 참고 행. 별도 시트는 만들지 않는다.
+function refsXlsxRows(inp){
+  return refsOf(inp).filter(x => x.item || x.value).map(x => {
+    const r = RULES.find(q => q.id===x.rule);
+    return ['참고: ' + x.item, x.value, [x.source, x.date, r && r.name].filter(Boolean).join(' · ')];
+  });
+}
+// VWorld 토지이용계획 항목 분류 (phase 6, D-04): 켤 체크 키·관련 판정. 용도지역은 참고 행만, 나머지(도로·학교 부지 등)는 null — 목록에만 보인다
+function vworldClass(f){
+  const s = v => typeof v==='string' ? v : '', code = s(f && f.prposAreaDstrcCode), nm = s(f && f.prposAreaDstrcCodeNm);
+  if (code==='UOA110' || code==='UOA120') return { flag:'school', rule:'edu' };
+  if (code.startsWith('UOC') || nm.includes('역사문화환경보존지역')) return { flag:'heritage', rule:'heritage2' };
+  if (nm==='중점경관관리구역') return { flag:'scenicKey', rule:'landscape' };
+  if (nm.includes('경관지구')) return { flag:'scenicZone', rule:'landscape' };
+  if (nm && ZONES.some(z => z[1]===nm)) return { flag:'', rule:'' };
+  return null;
+}
+// 조회 결과 → 새 참고 행과 켤 체크 키. 체크는 포함·저촉만 켜고 끄지 않는다(D-03), 같은 item·value·source 행은 건너뛴다(D-05). id는 처리기가 붙인다.
+function vworldApply(inp, fields, today, pnu){
+  const s = v => typeof v==='string' ? v : '', source = 'VWorld (PNU ' + s(pnu) + ')', on = (inp && inp.flags) || {}, refs = [], flags = [], old = refsOf(inp);
+  for (const f of Array.isArray(fields) ? fields : []) {
+    if (!f || typeof f!=='object') continue;
+    const item = s(f.prposAreaDstrcCodeNm), value = s(f.cnflcAtNm), c = item && vworldClass(f);
+    if (!c) continue;
+    if (![...old, ...refs].some(x => x.item===item && x.value===value && x.source===source)) refs.push({ item, value, source, date:today, rule:c.rule });
+    if (c.flag && (value==='포함' || value==='저촉') && !on[c.flag] && !flags.includes(c.flag)) flags.push(c.flag);
+  }
+  return { refs, flags };
+}
+// 조회 결과 목록: 받은 항목 전부와 반영 방식 (넣지 않는 항목도 보인다). API 문자열은 모두 esc()
+function vworldListHtml(fields, head){
+  const s = v => typeof v==='string' ? v : '', fs = (Array.isArray(fields) ? fields : []).filter(f => f && typeof f==='object');
+  if (!fs.length) return '';
+  const how = f => { const c = vworldClass(f), v = s(f.cnflcAtNm);
+    return !c ? '표시만' : !c.flag ? '참고 행 (용도지역 — 획지 값은 바꾸지 않음)' : (v==='포함' || v==='저촉') ? '참고 행 + 체크: ' + FIELD_LABEL[c.flag] : '참고 행 (접함 — 체크 안 함)'; };
+  return `<p class="note">${esc(head)}</p>
+    <div class="tbl-wrap"><table class="ptbl"><thead><tr><th>명칭</th><th>코드</th><th>포함 여부</th><th>반영</th></tr></thead>
+      <tbody>${fs.map(f => `<tr><td>${esc(s(f.prposAreaDstrcCodeNm))}</td><td>${esc(s(f.prposAreaDstrcCode))}</td><td>${esc(s(f.cnflcAtNm))}</td><td>${esc(how(f))}</td></tr>`).join('')}</tbody></table></div>
+    <div class="pcline"><button class="btn sm pri" data-vw="apply">입력에 반영</button><span class="note">Ctrl+Z로 되돌릴 수 있습니다</span></div>`;
+}
+/* parcel:end */
+
+/* ---------- 분야별 일정표 줄 구성 (순수) ---------- */
+// 읽기 전용 보기용. rows를 읽기만 하고 일정을 계산하지 않는다. document·window·S를 쓰지 않는다 (parcel-check.js가 이 구간을 잘라 node에서 시험).
+// 행 → 줄 표는 이 한 곳뿐이다: id 표 → rule 표(복제 행) → cat 표 → 기타 (D-09).
+const SCHED_ARCH = ['s2','g5','p_req','p_pub','r_int','r_land','r_bc','p_main','p_gosi','s3'];
+const SCHED_BLOCK_ONLY = ['s1','j1','j2','j4','j5','b0','b1','b2'];
+const SCHED_BLOCKS_REDEV = [['정비계획·구역지정',['s1','j1']], ['조합설립',['j2']], ['설계',['s2']], ['사업시행계획인가',['g5','p_req','p_pub','r_int','p_main','p_gosi']], ['관리처분',['j4']], ['실시설계',['s3']], ['이주·철거',['j5']], ['공사',['b0','b1']], ['준공',['b2']]];
+const SCHED_BLOCKS_OTHER = [['도시계획',['u1','u2','u3','u4']], ['계획설계',['s1','s2']], ['심의',['r_int','r_land','r_bc']], ['인허가',['p_main','p_safe','p_pre','p_fire']], ['실시설계',['s3']], ['공사',['b0','b1']], ['준공',['b2']]];
+// 분야별 줄: [줄 id, 이름, 통합심의에 묶이는 규칙(없으면 null), 정비사업에서만 묶임]
+const SCHED_LANES = [['urban','도시계획',null], ['traffic','교통',['traffic']], ['env','환경',['env','senv'],true], ['edu','교육환경',['edu']], ['dis','재해·안전',['disaster']], ['fire','소방',['fire']],
+  ['land','경관',['landscape']], ['ugs','지하안전',null], ['her2','국가유산',null], ['her','매장유산',null], ['cert','인증·성능',null], ['etc','기타',null]];
+const SCHED_BY_ID = { u1:'urban', u2:'urban', u3:'urban', u4:'urban', a_tr:'traffic', a_env:'env', a_senv:'env', a_edu:'edu', a_dis:'dis', p_safe:'dis', p_pre:'dis', a_fire:'fire', p_fire:'fire',
+  a_ugs:'ugs', a_ugss:'ugs', a_her2:'her2', a_her:'her', c_sub:'cert', c_long:'cert', c_perf:'cert', c_floor:'cert' };
+const SCHED_BY_RULE = { dup:'urban', traffic:'traffic', env:'env', senv:'env', edu:'edu', disaster:'dis', safety:'dis', predis:'dis', fire:'fire', landscape:'land', ugs:'ugs', ugs_s:'ugs',
+  heritage2:'her2', heritage:'her', energy:'cert', zeb:'cert', longlife:'cert', perf:'cert', floor:'cert' };
+const SCHED_BY_CAT = { cert:'cert', urban:'urban' };
+const hasKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+function schedLaneOf(r){
+  if (SCHED_ARCH.includes(r.id)) return 'arch';
+  if (SCHED_BLOCK_ONLY.includes(r.id)) return null;
+  if (hasKey(SCHED_BY_ID, r.id)) return SCHED_BY_ID[r.id];
+  if (r.rule && hasKey(SCHED_BY_RULE, r.rule)) return SCHED_BY_RULE[r.rule];
+  if (hasKey(SCHED_BY_CAT, r.cat)) return SCHED_BY_CAT[r.cat];
+  return 'etc';
+}
+const schedItem = r => ({ id:r.id, name:r.name, s:r.start, e:r.ms ? r.start : r.start + r.dur, ms:!!r.ms, tent:!!r.tent, row:r });
+const byStart = (a, b) => a.s - b.s; // Array.sort는 안정 정렬 — 시작이 같으면 입력 순서
+function schedLanes(rows, E){
+  const m = Object.fromEntries(rows.map(r => [r.id, r]));
+  const redev = !!(m.j2 || m.g5), ri = m.r_int, lanes = [];
+  const blocks = (redev ? SCHED_BLOCKS_REDEV : SCHED_BLOCKS_OTHER).map(([name, ids]) => {
+    const rs = ids.map(i => m[i]).filter(Boolean); if (!rs.length) return null;
+    return { id:'blk:' + name, name, s:Math.min(...rs.map(r => r.start)), e:Math.max(...rs.map(r => r.ms ? r.start : r.start + r.dur)), ms:false, tent:false, row:rs[0] };
+  }).filter(Boolean).sort(byStart);
+  const note = (items, bundle) => [items.some(x => x.tent) && '확인 필요 포함', bundle && '심의는 통합심의에서'].filter(Boolean).join(' · ');
+  if (blocks.length) lanes.push({ id:'all', label:'전체 일정', items:blocks, bundle:null, note:'' });
+  const arch = rows.filter(r => schedLaneOf(r) === 'arch').map(schedItem).sort(byStart);
+  if (arch.length) lanes.push({ id:'arch', label:'건축', items:arch, bundle:null, note:note(arch, false) });
+  for (const [id, label, rules, redevOnly] of SCHED_LANES) {
+    const items = rows.filter(r => schedLaneOf(r) === id).map(schedItem).sort(byStart);
+    const on = rules && ri && (!redevOnly || redev) && (items.length || rules.some(k => E && (E[k] === 'Y' || E[k] === 'Q')));
+    if (!items.length && !on) continue;
+    const bundle = on ? { s:ri.start } : null;
+    lanes.push({ id, label, items, bundle, note:note(items, bundle) });
+  }
+  return lanes;
+}
+// 겹치는 구간 {s,e}를 단으로 나눈다: 입력 순서대로 단 번호 배열. 시작 순으로 보며 마지막 끝 ≤ 시작인 가장 낮은 단에 넣는다 (맞닿음 허용).
+function packLevels(spans){
+  const ends = [], out = new Array(spans.length);
+  spans.map((_, i) => i).sort((a, b) => spans[a].s - spans[b].s || a - b).forEach(i => {
+    let l = ends.findIndex(e => e <= spans[i].s); if (l < 0) l = ends.length;
+    ends[l] = spans[i].e; out[i] = l;
+  });
   return out;
 }
 
@@ -665,16 +1114,17 @@ const store = {
   col(){ return this.db.collection('data/users/' + this.uid); },
   async list(){
     if (this.mode==='cloud') { const s = await this.col().get(); return s.docs.map(d => d.data()).filter(Boolean).map(x => JSON.parse(JSON.stringify(x))); }
-    try { return JSON.parse(localStorage.getItem(LS) || '[]'); } catch(e) { return []; }
+    try { return JSON.parse(localStorage.getItem(LS) || '[]'); }
+    catch(e) { try { if (!localStorage.getItem(LS+'.corrupt')) localStorage.setItem(LS+'.corrupt', localStorage.getItem(LS)); } catch(_) {} return []; } // 다음 저장이 덮어쓰기 전에 원본을 한 번 남긴다
   },
   async put(p){
     const body = JSON.parse(JSON.stringify(p));
     if (this.mode==='cloud') return this.col().doc(p.id).set(body);
-    try { const all = await this.list(); const i = all.findIndex(x => x.id===p.id); if (i>=0) all[i] = body; else all.push(body); localStorage.setItem(LS, JSON.stringify(all)); } catch(e) {}
+    const all = await this.list(); const i = all.findIndex(x => x.id===p.id); if (i>=0) all[i] = body; else all.push(body); localStorage.setItem(LS, JSON.stringify(all));
   },
   async del(id){
     if (this.mode==='cloud') return this.col().doc(id).delete();
-    try { localStorage.setItem(LS, JSON.stringify((await this.list()).filter(x => x.id!==id))); } catch(e) {}
+    localStorage.setItem(LS, JSON.stringify((await this.list()).filter(x => x.id!==id)));
   }
 };
 let saveTimer = null, saving = Promise.resolve(), dirtyIds = new Set();
@@ -701,7 +1151,7 @@ function flush(){
       }
       setSave(e && e.code==='quota_exceeded' ? '저장 공간이 가득 찼습니다' : '저장 실패 — 다시 시도', 'busy'); ids.forEach(i => dirtyIds.add(i));
     }
-  });
+  }).catch(() => { setSave('저장 실패 — 다시 시도', 'busy'); ids.forEach(i => dirtyIds.add(i)); }); // 실패한 채로 굳으면 이후 저장이 모두 건너뛰어진다
 }
 function showGuide(){
   const local = store.mode!=='cloud';
@@ -723,8 +1173,11 @@ function showGuide(){
 }
 
 /* ---------- 상태 · 되돌리기 ---------- */
-const S = { projects:[], cur:null, sel:null, tab:'gantt', hist:[], fut:[] };
+const S = { projects:[], cur:null, sel:null, tab:'gantt', hist:[], fut:[], scope:'all', gv:'edit' };
 const $ = s => document.querySelector(s);
+// 보기 범위: 'all' 또는 획지 id. 저장하지 않는 화면 상태. scopeParcel은 01-02의 읽기 전용 일정 가드가 쓴다.
+const scopeParcel = () => parcelsOf(S.cur.input).find(x => x.id===S.scope) || null;
+const view = p => parcelView(p, S.scope);
 const snapOf = p => JSON.stringify({ input:p.input, overrides:p.overrides, rows:p.rows, settings:p.settings });
 function snap(){ if (!S.cur) return; S.hist.push(snapOf(S.cur)); if (S.hist.length>60) S.hist.shift(); S.fut = []; updUndo(); }
 function restore(json){ const o = JSON.parse(json); Object.assign(S.cur, o); touch(); renderAll(); }
@@ -745,7 +1198,7 @@ function ask(msg, ok='확인', danger){
 function setTab(t){
   S.tab = t;
   document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', b.dataset.tab===t));
-  $('#vInput').hidden = t!=='input'; $('#vVerdict').hidden = t!=='verdict'; $('#vGantt').hidden = t!=='gantt';
+  $('#vInput').hidden = t!=='input'; $('#vVerdict').hidden = t!=='verdict'; $('#vGantt').hidden = t!=='gantt'; syncGView();
   try { localStorage.setItem(LS+'.tab', t); } catch(e) {}
   if (t==='verdict') renderVerdict();
   if (t==='gantt') renderGanttAll();
@@ -769,7 +1222,7 @@ function renderInput(){
     <div class="sec"><h2>기본 정보</h2><div class="grid">
       ${fld('i_name','프로젝트명 (가칭)',`<input type="text" id="i_name" data-k="name" value="${esc(i.name)}">`)}
       ${fld('i_sido','시·도',selIn('sido', SIDO.map(s => [s,s])), i.sido==='서울특별시' ? '서울시 조례 기준 반영' : '조례 항목은 "확인 필요"로 표시')}
-      ${fld('i_sgg','시·군·구',`<input type="text" id="i_sgg" data-k="sgg" value="${esc(i.sgg)}" placeholder="예: 용산구">`)}
+      ${fld('i_sgg','시·군·구',`<input type="text" id="i_sgg" data-k="sgg" value="${esc(i.sgg)}" placeholder="예: ○○구">`)}
       ${fld('i_type','사업 유형',selIn('type', Object.entries(TYPES)))}
       ${i.type==='redev' ? fld('i_redevKind','정비사업 구분',selIn('redevKind',[['redevelop','재개발'],['rebuild','재건축']])) : ''}
       ${fld('i_owner','사업 주체',selIn('owner', [['private','민간'],['public','공공']]))}
@@ -788,11 +1241,18 @@ function renderInput(){
       ${fld('i_hh', i.use==='officetel' ? '실 수' : '세대수', numIn('hh', i.use==='officetel' ? '실' : '세대'))}
       ${i.use==='mixed' ? fld('i_resRatio','주택 연면적 비율',numIn('resRatio','%','100'),'주상복합 승인 예외 판정용') : ''}
     </div></div>
-    <div class="sec"><h2>입지 · 특이사항 <small>해당하는 것만 체크</small></h2><div class="checks">
-      ${FLAGS.map(([k,t,d]) => `<label class="chk"><input type="checkbox" id="f_${k}" data-f="${k}"${i.flags&&i.flags[k]?' checked':''}><span>${t}${(i.unk||{})[k]?'<em class="unk">확인 필요</em>':''}<small>${d}</small>${(i.src||{})[k]?`<small style="color:var(--accent)">출처: ${esc(i.src[k])}</small>`:''}</span></label>`).join('')}
+    ${parcelSectionHtml(i)}
+    <div class="sec"><h2>입지 · 특이사항<small>해당하는 것만 체크</small></h2><div class="checks">
+      ${FLAGS.map(([k,t,d]) => `<label class="chk"><input type="checkbox" id="f_${k}" data-f="${k}"${i.flags&&i.flags[k]?' checked':''}><span>${t}${((i.unk||{})[k] || legacyScenic(i, k))?'<em class="unk">확인 필요</em>':''}<small>${d}</small>${(i.src||{})[k]?`<small style="color:var(--accent)">출처: ${esc(i.src[k])}</small>`:''}</span></label>`).join('')}
     </div></div>
-    <div class="sec"><h2>참고 사항 <small>판정에는 쓰지 않는 계획 수치·진행 상황 — 출처와 함께 기록</small></h2>
-      <textarea class="memo" id="i_memo" data-k="memo" placeholder="예: 결정 용적률 400% 이하 (고시 제0000-000호)">${esc(i.memo||'')}</textarea></div>
+    <div class="sec"><h2>VWorld 입지 조회<small>주소·PNU로 토지이용계획을 조회해 참고 사항과 입지 체크에 반영 · 지하역사 연결은 조회되지 않습니다 — 직접 체크</small></h2>
+      <div class="pcline"><label class="note" for="vwKey">인증키</label><input type="password" id="vwKey" autocomplete="off" style="width:260px" placeholder="${vwKey() ? '저장된 키 있음 — 바꿀 때만 입력' : 'VWorld 인증키'}">
+        <button class="btn sm" data-vw="save">저장</button><button class="btn sm" data-vw="clear">키 지우기</button></div>
+      <div class="pcline"><label class="note" for="vwQ">주소 또는 PNU</label><input type="text" id="vwQ" style="width:320px" placeholder="도로명·지번 주소 또는 PNU 19자리">
+        <button class="btn sm" data-vw="query">조회</button></div>
+      <p class="note">키는 이 브라우저에만 저장되고 프로젝트·백업·Excel에 들어가지 않습니다. 조회하면 입력한 주소가 VWorld(외부)로 전송됩니다.</p>
+      <div data-vwres>${vwLast ? vworldListHtml(vwLast.fields, vwLast.head) : ''}</div></div>
+    ${refsSectionHtml(i)}
     <div class="actions">
       <button class="btn pri" id="bRun">판정하고 일정표 만들기</button>
       <button class="btn" id="bSeeV">판정 결과만 보기</button>
@@ -809,12 +1269,169 @@ $('#vInput').addEventListener('change', e => {
   else p.input[t.dataset.k] = t.value;
   // 값을 직접 넣으면 확인 필요 표시를 해제
   if (p.input.unk && p.input.unk[k] && (t.dataset.f || t.value!=='')) { p.input.unk = { ...p.input.unk }; delete p.input.unk[k]; const y = $('#vInput').scrollTop; renderInput(); $('#vInput').scrollTop = y; }
-  touch(); updCount(); renderFoot();
+  touch(); updCount(); renderFoot(); renderParcelSum();
   if (['use','type','sido','basements','gfa','site','name'].includes(t.dataset.k)) { const y = $('#vInput').scrollTop; renderInput(); $('#vInput').scrollTop = y; if (t.dataset.k==='name') renderProjSel(); }
 });
 $('#vInput').addEventListener('click', async e => {
   if (e.target.id==='bSeeV') setTab('verdict');
   if (e.target.id==='bRun') await regenerate();
+});
+// 면적 합계·고시 소계 차이 줄만 다시 그린다 (포커스를 지키려고 전체 재렌더 없음)
+function renderParcelSum(){
+  for (const k of ['parcel', 'infra', 'total']) { const el = $('#vInput').querySelector(`[data-sum="${k}"]`); if (el) el.innerHTML = parcelSumHtml(S.cur.input, k); }
+}
+// 용도지역 결과 영역만 다시 그린다 (포커스 유지)
+function renderZoneRes(){ const el = $('#vInput').querySelector('[data-zres]'); if (el) el.innerHTML = zoneResultsHtml(S.cur.input); }
+// 획지·기반시설 추가·삭제·수정. 목록 이름과 필드 이름은 허용 목록만 쓴다.
+$('#vInput').addEventListener('click', e => {
+  const b = e.target.closest('[data-add],[data-rm]'); if (!b) return;
+  const list = b.dataset.add || b.dataset.rm;
+  if (list==='zones') { // 획지 안 용도지역 행 추가·삭제
+    const p = S.cur, cur = parcelsOf(p.input), pc = cur.find(x => x.id===b.dataset.pid); if (!pc) return;
+    if (b.dataset.rm) { // C-07: 유효 행이 1개 이하로 줄면 중복지정을 풀고 남은 행을 획지 필드로 옮긴다 (area 불변)
+      if (!zoneRowsOf(pc).some(r => r.id===b.dataset.rid)) return;
+      snap();
+      const left = zoneRowsOf(pc).filter(r => r.id!==b.dataset.rid);
+      p.input.parcels = cur.map(x => {
+        if (x!==pc) return x;
+        if (left.length > 1) return { ...x, zones: left };
+        const { zones, strip, ...rest } = x, r = left[0];
+        return r ? { ...rest, zone:r.zone, far:r.far ?? '', bcr:r.bcr ?? '' } : rest;
+      });
+      toast(left.length > 1 ? '용도지역 행 삭제 — Ctrl+Z로 되돌리기' : '용도지역이 1개 남아 중복지정을 풀었습니다 — Ctrl+Z로 되돌리기');
+      touch(); const y = $('#vInput').scrollTop; renderInput(); $('#vInput').scrollTop = y; renderFoot();
+      return;
+    }
+    if (!b.dataset.add) return;
+    snap();
+    const zr = zoneRowsOf(pc), blank = { area:'', far:'', bcr:'' };
+    const zk = [pc.zone, p.input.zone].find(k => ZONES.some(z => z[0]===k)) ?? ZONES[4][0];
+    const zones = zr.length < 2 ? [{ id:uid(), zone:zk, area:pc.area ?? '', far:pc.far ?? '', bcr:pc.bcr ?? '' }, { id:uid(), zone:zk, ...blank }] : [...zr, { id:uid(), zone:zr[0].zone, ...blank }];
+    p.input.parcels = cur.map(x => x===pc ? { ...x, zones } : x);
+    touch(); const y = $('#vInput').scrollTop; renderInput(); $('#vInput').scrollTop = y; renderFoot();
+    return;
+  }
+  if (!['parcels', 'infra', 'refs'].includes(list)) return;
+  const p = S.cur, cur = list==='infra' ? infraOf(p.input) : list==='refs' ? refsOf(p.input) : parcelsOf(p.input);
+  snap();
+  if (b.dataset.add) p.input[list] = [...cur, list==='infra'
+    ? { id:uid(), name:`기반시설 ${cur.length+1}`, type:'road', area:'' }
+    : list==='refs' ? { id:uid(), item:'', value:'', source:'', date:'', rule:'' }
+    : { id:uid(), name:`획지 ${cur.length+1}`, zone:p.input.zone, area:'', far:'', bcr:'', resRatio:'', path:'' }];
+  else {
+    p.input[list] = cur.filter(x => x.id!==b.dataset.rid);
+    if (list==='parcels' && S.scope===b.dataset.rid) S.scope = 'all';
+    toast(list==='infra' ? '기반시설 삭제 — Ctrl+Z로 되돌리기' : list==='refs' ? '참고사항 삭제 — Ctrl+Z로 되돌리기' : '획지 삭제 — Ctrl+Z로 되돌리기');
+  }
+  touch(); const y = $('#vInput').scrollTop; renderInput(); $('#vInput').scrollTop = y; renderFoot();
+});
+$('#vInput').addEventListener('change', e => {
+  const t = e.target, f = t.dataset.fd, nt = t.dataset.nt;
+  if (nt==='parcel' || nt==='infra') { // 고시 소계
+    snap(); S.cur.input.notice = { ...noticeOf(S.cur.input), [nt]: t.value }; touch(); renderParcelSum(); return;
+  }
+  if (t.dataset.ls==='zones') { // 획지 안 용도지역 행 수정: 필드·행·획지는 허용 목록과 id 일치로만
+    if (!['zone','area','far','bcr'].includes(f)) return;
+    if (f==='zone' && !ZONES.some(z => z[0]===t.value)) return;
+    const p = S.cur, cur = parcelsOf(p.input), pc = cur.find(x => x.id===t.dataset.pid);
+    if (!pc || !zoneRowsOf(pc).some(r => r.id===t.dataset.rid)) return;
+    snap();
+    p.input.parcels = cur.map(x => x===pc ? { ...x, zones: x.zones.map(r => r && r.id===t.dataset.rid ? { ...r, [f]: t.value } : r) } : x);
+    touch(); renderZoneRes(); renderFoot(); return;
+  }
+  const ls = t.dataset.ls, ok = ls==='parcels' ? ['strip','name','zone','area','far','bcr','resRatio','path','use','gfaUp','gfaDown','floors','basements','height','hh','ofc'] : ls==='infra' ? ['name','type','area'] : ls==='refs' ? ['item','value','source','date','rule'] : null;
+  if (!f || !ok || !ok.includes(f)) return;
+  if (ls==='infra' && f==='type' && !INFRA_TYPES.some(o => o[0]===t.value)) return;
+  if (ls==='parcels' && f==='use' && t.value!=='' && !Object.hasOwn(USES, t.value)) return;
+  if (ls==='refs' && f==='rule' && t.value!=='' && !RULES.some(r => r.id===t.value)) return;
+  const p = S.cur, cur = ls==='infra' ? infraOf(p.input) : ls==='refs' ? refsOf(p.input) : parcelsOf(p.input);
+  if (!cur.some(x => x.id===t.dataset.rid)) return;
+  snap();
+  p.input[ls] = cur.map(x => x.id===t.dataset.rid ? { ...x, [f]: f==='strip' ? !!t.checked : t.value } : x);
+  touch(); if (f==='area') renderParcelSum(); if (f==='area' || f==='strip') renderZoneRes(); renderFoot();
+});
+/* VWorld 입지 조회 (phase 6): 키는 이 브라우저 localStorage에만(D-02), 조회 전 확인(D-07), CORS가 없어 JSONP. 좌표는 저장하지 않는다(약관) */
+function vwKey(){ try { return localStorage.getItem(LS+'.vworldKey') || ''; } catch(e) { return ''; } }
+function jsonp(url, params){
+  return new Promise((resolve, reject) => {
+    const name = 'vwcb' + uid(), s = document.createElement('script');
+    let timer = null;
+    const done = () => { clearTimeout(timer); delete window[name]; s.remove(); };
+    const fail = m => { done(); reject(new Error(m)); };
+    window[name] = v => { done(); resolve(v); };
+    s.onerror = () => fail('VWorld 응답이 없습니다 — 네트워크·인증키를 확인하세요.');
+    // 키 오류 등은 callback 없이 맨 JSON으로 와서 콜백이 불리지 않은 채 load된다 — 10초 기다리지 않고 바로 실패
+    s.onload = () => { if (name in window) fail('VWorld가 콜백 없이 응답했습니다 — 인증키를 확인하세요. 파일로 직접 연 창이나 data: 미리보기 창에서는 키 검사가 실패할 수 있습니다.'); };
+    timer = setTimeout(() => fail('VWorld 응답이 10초 안에 오지 않았습니다.'), 10000);
+    s.src = url + '?' + Object.entries({ ...params, callback:name }).map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&');
+    document.body.appendChild(s);
+  });
+}
+function vwErr(code, text){
+  return code==='INCORRECT_KEY' || code==='INVALID_KEY'
+    ? new Error('인증키가 올바르지 않습니다. 파일로 직접 연 창이나 data: 미리보기 창에서는 키 검사가 실패할 수 있습니다 — 배포 주소나 localhost로 여세요.')
+    : new Error('VWorld 오류: ' + (code || '') + ' ' + (text || ''));
+}
+let vwLast = null; // 마지막 조회 결과 { pnu, fields, head } — 화면 상태일 뿐 S·저장본·백업에 넣지 않는다
+$('#vInput').addEventListener('click', async e => {
+  const b = e.target.closest('[data-vw]'); if (!b) return;
+  const a = b.dataset.vw, keep = () => { const y = $('#vInput').scrollTop; renderInput(); $('#vInput').scrollTop = y; };
+  const out = h => { const el = $('#vInput').querySelector('[data-vwres]'); if (el) el.innerHTML = h; };
+  const say = m => { out(`<p class="note">${esc(m)}</p>`); toast(m); };
+  if (a==='save') {
+    const k = $('#vwKey').value.trim(); if (!k) { toast('인증키를 입력하세요'); return; }
+    try { localStorage.setItem(LS+'.vworldKey', k); } catch(_) { toast('이 브라우저에 저장하지 못했습니다'); return; }
+    $('#vwKey').value = ''; toast('인증키를 이 브라우저에만 저장했습니다'); keep();
+  } else if (a==='clear') {
+    try { localStorage.removeItem(LS+'.vworldKey'); } catch(_) {}
+    toast('인증키를 지웠습니다'); keep();
+  } else if (a==='query') {
+    const key = vwKey(); if (!key) { say('먼저 VWorld 인증키를 저장하세요.'); return; }
+    const q = $('#vwQ').value.trim(); if (!q) { toast('주소 또는 PNU 19자리를 입력하세요'); return; }
+    if (!confirm('이 주소를 VWorld(외부)로 보냅니다: ' + q + '\n비공개 프로젝트 주소면 취소하세요.')) return;
+    vwLast = null; out('<p class="note">조회 중…</p>');
+    try {
+      let pnu = q, head = 'PNU ' + q;
+      if (!/^\d{19}$/.test(q)) {
+        const NF = '주소를 찾지 못했습니다 — 도로명 또는 지번 주소로 다시 입력하세요.';
+        let g = null;
+        for (const type of ['ROAD', 'PARCEL']) {
+          const r = (await jsonp('https://api.vworld.kr/req/address', { service:'address', request:'getcoord', version:'2.0', crs:'epsg:4326', type, address:q, format:'json', key }))?.response || {};
+          if (r.status==='OK') { g = r; break; }
+          if (r.status!=='NOT_FOUND') throw vwErr(r.error?.code || r.status, r.error?.text);
+        }
+        const x = Number(g?.result?.point?.x), y = Number(g?.result?.point?.y);
+        if (!g || !Number.isFinite(x) || !Number.isFinite(y)) throw new Error(NF);
+        const d = (await jsonp('https://api.vworld.kr/req/data', { service:'data', request:'GetFeature', data:'LP_PA_CBND_BUBUN', geomFilter:'POINT(' + x + ' ' + y + ')', geometry:'false', format:'json', key }))?.response || {};
+        if (d.status!=='OK') throw d.status==='NOT_FOUND' ? new Error('필지(PNU)를 찾지 못했습니다.') : vwErr(d.error?.code || d.status, d.error?.text);
+        const pr = d.result?.featureCollection?.features?.[0]?.properties || {};
+        pnu = String(pr.pnu ?? '');
+        if (!/^\d{19}$/.test(pnu)) throw new Error('필지(PNU)를 찾지 못했습니다.');
+        head = 'PNU ' + pnu + ' · ' + (g.refined?.text || pr.addr || q);
+      }
+      const lu = (await jsonp('https://api.vworld.kr/ned/data/getLandUseAttr', { pnu, format:'json', numOfRows:'100', pageNo:'1', key }))?.landUses || {};
+      const fields = [].concat(lu.field || []).filter(f => f && typeof f==='object');
+      if (!fields.length) throw lu.resultCode ? vwErr(lu.resultCode, lu.resultMsg) : new Error('토지이용계획 결과가 없습니다.');
+      vwLast = { pnu, fields, head }; out(vworldListHtml(fields, head));
+    } catch(err) { say(String(err && err.message || err)); }
+  } else if (a==='apply') {
+    if (!vwLast) return;
+    const d = new Date(), today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const p = S.cur, r = vworldApply(p.input, vwLast.fields, today, vwLast.pnu);
+    if (!r.refs.length && !r.flags.length) { toast('새로 반영할 항목이 없습니다'); return; }
+    snap();
+    p.input.refs = [...refsOf(p.input), ...r.refs.map(x => ({ id:uid(), ...x }))];
+    p.input.flags = { ...(p.input.flags||{}), ...Object.fromEntries(r.flags.map(k => [k, true])) };
+    if (p.input.unk && r.flags.some(k => p.input.unk[k])) { p.input.unk = { ...p.input.unk }; r.flags.forEach(k => delete p.input.unk[k]); } // 체크박스 change 처리기처럼 값을 넣으면 확인 필요 해제
+    touch(); keep(); renderFoot(); updCount();
+    toast('참고 ' + r.refs.length + '행 추가' + (r.flags.length ? ', 체크: ' + r.flags.map(k => FIELD_LABEL[k]).join('·') : '') + ' — Ctrl+Z로 되돌리기');
+  }
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-scope]'); if (!b) return;
+  S.scope = b.dataset.scope; S.sel = null;
+  if (S.tab==='verdict') renderVerdict(); else if (S.tab==='gantt') renderGanttAll();
+  renderFoot();
 });
 async function regenerate(){
   const p = S.cur;
@@ -827,12 +1444,12 @@ async function regenerate(){
 
 /* ---------- 02 법령 판정 ---------- */
 function renderVerdict(){
-  const p = S.cur, { c, V, E } = effective(p);
+  const p = S.cur, v = view(p), { c, V, E } = effective(v);
   const cnt = s => Object.values(E).filter(x => x===s).length;
   const pathName = { housing:'주택건설사업계획승인 (주택법)', permit:'건축허가 (건축법)', redev:'정비사업 사업시행계획인가 (도시정비법)' }[c.path];
-  const mismatch = (p.input.type==='housing' && c.path==='permit') || (p.input.type==='permit' && c.path==='housing');
+  const mismatch = (v.input.type==='housing' && c.path==='permit') || (v.input.type==='permit' && c.path==='housing');
   const cats = [...new Set(RULES.map(r => r.cat))];
-  $('#vVerdict').innerHTML = `<div class="vwrap wrap">
+  $('#vVerdict').innerHTML = `<div class="vwrap wrap">${scopeBarHtml(p.input, S.scope)}${basisBannerHtml(v)}
     <div class="sum">
       <div class="k path"><span>인허가 경로</span><b>${pathName}</b></div>
       <div class="k"><b style="color:var(--ok)">${cnt('Y')}</b><span>대상</span></div>
@@ -841,17 +1458,17 @@ function renderVerdict(){
     </div>
     ${mismatch ? `<div class="banner warn">입력한 사업 유형(${TYPES[p.input.type]})과 판정 경로가 다릅니다. ${esc(V.hap.r)}</div>` : ''}
     ${!c.isSeoul ? `<div class="banner warn">${esc(c.sido)} 조례는 아직 기준표에 없습니다. 조례에 따라 달라지는 항목은 법령 기준으로 판정하고 "확인 필요"로 표시했습니다.</div>` : ''}
-    ${p.stale ? `<div class="banner info">판정을 고쳤습니다. 일정표에 반영하려면 <button class="btn sm pri" id="bRegen2">판정대로 일정 다시 만들기</button></div>` : ''}
+    ${p.stale && !v.readOnly ? `<div class="banner info">판정을 고쳤습니다. 일정표에 반영하려면 <button class="btn sm pri" id="bRegen2">판정대로 일정 다시 만들기</button></div>` : ''}
     <div class="tbl-wrap"><table class="vt">
       <thead><tr><th style="width:190px">항목</th><th style="width:96px">판정</th><th>판단 근거 (입력값 대입)</th><th style="width:290px">근거 법령 · 기준</th><th style="width:110px">기준 신뢰도</th><th style="width:118px">직접 지정</th></tr></thead>
       <tbody>${cats.map(cat => `<tr class="cat"><td colspan="6">${cat}</td></tr>` + RULES.filter(r => r.cat===cat).map(r => {
         const ov = (p.overrides||{})[r.id];
         return `<tr><td class="nm">${esc(r.name)}</td>
           <td><span class="pill ${E[r.id]}${ov?' ov':''}">${ST[E[r.id]]}</span>${ov?`<div class="note" style="font-size:11px">자동: ${ST[V[r.id].s]}</div>`:''}</td>
-          <td class="why">${esc(V[r.id].r)}</td>
+          <td class="why">${esc(V[r.id].r)}${refsLineHtml(v.input, r.id)}</td>
           <td><div class="law">${esc(r.law)}</div><div class="memo">${esc(r.memo)}</div></td>
           <td><span class="conf ${r.conf}">${CONF[r.conf]}</span><div class="note" style="font-size:11px">${RULESET.date} 확인</div></td>
-          <td><select data-ov="${r.id}" aria-label="${esc(r.name)} 직접 지정"><option value="">자동</option><option value="Y"${ov==='Y'?' selected':''}>대상</option><option value="N"${ov==='N'?' selected':''}>비대상</option><option value="Q"${ov==='Q'?' selected':''}>확인 필요</option></select></td></tr>`;
+          <td><select data-ov="${r.id}" aria-label="${esc(r.name)} 직접 지정"${v.readOnly ? ' disabled' : ''}><option value="">자동</option><option value="Y"${ov==='Y'?' selected':''}>대상</option><option value="N"${ov==='N'?' selected':''}>비대상</option><option value="Q"${ov==='Q'?' selected':''}>확인 필요</option></select></td></tr>`;
       }).join('')).join('')}</tbody></table></div>
     <p class="note">기준 신뢰도 — "원문 확인": 국가법령정보센터 현행 원문(괄호 안 시행일)과 대조. "해석례·2차 자료": 법제처 해석례·공공기관 자료로 확인, 원문 대조 권장. "기준값 확인 필요": 자료 간 수치가 다르거나 구버전 자료 기준. 판정은 검토 보조용이며 법적 판단을 대신하지 않습니다.</p>
   </div>`;
@@ -875,21 +1492,26 @@ const ymStr = (base, m) => { const [y, mo] = ymAdd(base, m); return `${y}.${Stri
 const fmtDur = d => d<1 ? `${Math.round(d*4)}주` : `${+d.toFixed(2)}개월`;
 const fmtAt = (st, m) => st.axis==='ym' ? `${ymStr(st.base, m)}${m%1 ? ` ${Math.round((m%1)*4)+1}주` : ''}` : `${+(m+1).toFixed(2)}M`;
 
-function renderGanttAll(){ if (S.tab!=='gantt') return; renderTool(); renderGantt(); renderInsp(); }
+// 일정 보기 전환: 'edit'(막대 편집, 기본) / 'sched'(분야별 일정표, 읽기 전용). 저장하지 않는 화면 상태 (D-04)
+function syncGView(){ const s = S.gv==='sched'; $('#gScroll').hidden = s; $('#gSched').hidden = !s; document.body.classList.toggle('gv-sched', s && S.tab==='gantt'); }
+function setGView(v){ S.gv = v==='sched' ? 'sched' : 'edit'; S.sel = null; syncGView(); renderGanttAll(); }
+function renderGanttAll(){ if (S.tab!=='gantt') return; syncGView(); renderTool(); renderGantt(); renderInsp(); }
 function renderTool(){
-  const st = S.cur.settings;
-  $('#gTool').innerHTML = `
+  const st = S.cur.settings, bar = scopeBarHtml(S.cur.input, S.scope), sched = S.gv==='sched';
+  const gm = `<div class="seg gmode" role="group" aria-label="일정 보기"><button data-gv="edit" aria-pressed="${!sched}">막대 편집</button><button data-gv="sched" aria-pressed="${sched}">분야별 일정표</button></div><span class="sep"></span>`;
+  $('#gTool').innerHTML = `${bar}${bar ? '<span class="sep"></span>' : ''}${gm}${sched ? '<span class="note">분야별 일정표는 보기·인쇄용입니다. 고치려면 "막대 편집"을 누르세요.</span><button class="btn sm" id="gPrint">인쇄</button>' : scopeParcel() ? '<span class="note">획지별 일정은 판정으로 자동 계산한 읽기 전용 보기입니다. 일정을 고치려면 구역 전체를 선택하세요.</span>' : `
     <button class="btn sm" id="gAdd">+ 행</button>
     <button class="btn sm" id="gMs">+ 마일스톤</button>
     <span class="sep"></span>
-    <button class="btn sm" id="gFix" title="앞 단계보다 먼저 시작하는 항목을 뒤로 밀어 맞춥니다">선후관계 맞추기</button>
-    <button class="btn sm" id="gRegen">판정대로 다시 만들기</button>
+    <button class="btn sm" id="gFix" title="선행 막대 끝에 맞춰 뒤 항목을 밀거나 당겨 맞춥니다">선후관계 맞추기</button>
+    <button class="btn sm" id="gRegen">판정대로 다시 만들기</button>`}
     <span class="sep"></span>
     <button class="btn sm" id="gZo" aria-label="축소">−</button><span class="zoom">${st.px}px/월</span><button class="btn sm" id="gZi" aria-label="확대">+</button>
     <button class="btn sm" id="gFit">맞춤</button>`;
 }
 function renderGantt(){
-  const p = S.cur, st = p.settings, px = st.px, rows = p.rows;
+  if (S.gv==='sched') return renderSched();
+  const p = S.cur, st = p.settings, px = st.px, rows = view(p).rows;
   const body = $('#gBody');
   if (!rows.length) { body.innerHTML = `<div class="gempty">아직 일정이 없습니다.<br><br><button class="btn pri" id="gEmptyRun">판정하고 일정표 만들기</button><br><br><span class="note">01 사업 개요를 먼저 입력하세요.</span></div>`; return; }
   const M = spanMonths(rows), W = M*px, LW = leftW(st);
@@ -898,7 +1520,7 @@ function renderGantt(){
   for (let m = 0; m < M; m++) {
     const [y, mo] = ymAdd(st.base, m);
     const lab = st.axis==='ym' ? (mo===1 || m===0 ? `${y}.${String(mo).padStart(2,'0')}` : `${mo}월`) : `${m+1}M`;
-    const step = px < 36 ? (st.axis==='ym' ? 3 : 3) : 1;
+    const step = px < 36 ? 3 : 1;
     hm += `<div class="hm${st.axis==='ym'&&mo===1?' yr':''}" style="left:${m*px}px;width:${px}px">${m%step===0 || (st.axis==='ym'&&mo===1) ? lab : ''}</div>`;
     if (px >= 48) for (let q = 0; q < 4; q++) hq += `<div class="hq" style="left:${m*px + q*px/4}px;width:${px/4}px">${q+1}</div>`;
   }
@@ -935,7 +1557,7 @@ function renderGantt(){
   let paths = '';
   if (st.deps !== 'off') {
     for (const r of rows) for (const d of r.deps) {
-      const a = rowById(d); if (!a || yMap[a.id]==null || yMap[r.id]==null) continue;
+      const a = rows.find(x => x.id===d); if (!a || yMap[a.id]==null || yMap[r.id]==null) continue;
       const hot = S.sel && (S.sel===r.id || S.sel===a.id);
       if (st.deps==='sel' && !hot) continue;
       const x1 = endOf(a)*px, y1 = yMap[a.id], x2 = r.start*px, y2 = yMap[r.id];
@@ -946,6 +1568,56 @@ function renderGantt(){
   body.innerHTML = html + today + `<svg class="deps" style="left:${LW}px;top:0" width="${W}" height="${y}">${paths}</svg>`;
   // 프로젝트를 처음 열 때 오늘(연·월 표기) 6개월 전으로 이동
   if (S.needScroll && $('#gScroll').clientWidth > 0) { S.needScroll = false; const [by, bm] = (st.base||nowYM()).split('-').map(Number), d = new Date(); const tm = (d.getFullYear()*12 + d.getMonth()) - (by*12 + bm - 1); $('#gScroll').scrollLeft = st.axis==='ym' && tm > 6 ? (tm - 6)*px : 0; }
+}
+/* 분야별 일정표 (읽기 전용 보기, D-04·D-09): 줄 구성은 schedLanes(순수), 여기서는 rows를 읽어 SVG 한 장으로 그리기만 한다. 일정을 계산하거나 rows를 바꾸지 않는다. */
+const SCHED_LW = 130, SCHED_NW = 190, SCHED_HEAD = 34, SCHED_BAR = 18, SCHED_TIER = 22, SCHED_LBL = 13, SCHED_MK = 10, SCHED_PAD = 6, SCHED_CH = 11;
+function renderSched(){
+  const p = S.cur, st = p.settings, px = st.px, v = view(p), el = $('#gSched');
+  if (!v.rows.length) { el.innerHTML = `<div class="gempty">아직 일정이 없습니다.<br><br><button class="btn pri" id="gEmptyRun">판정하고 일정표 만들기</button><br><br><span class="note">01 사업 개요를 먼저 입력하세요.</span></div>`; return; }
+  const lanes = schedLanes(v.rows, effective(v).E), M = spanMonths(v.rows), CW = M*px, W = SCHED_LW + CW + SCHED_NW, xOf = m => SCHED_LW + m*px;
+  let head = '', grid = '';
+  for (let m = 0; m < M; m++) {
+    const [y, mo] = ymAdd(st.base, m), step = px < 36 ? 3 : 1;
+    const lab = st.axis==='ym' ? (mo===1 || m===0 ? `${y}.${String(mo).padStart(2,'0')}` : `${mo}월`) : `${m+1}M`;
+    if (m%step===0 || (st.axis==='ym' && mo===1)) { grid += `M${xOf(m)} ${SCHED_HEAD - 6}V@H `; head += `<text class="sh${st.axis==='ym' && mo===1 ? ' yr' : ''}" x="${xOf(m) + 2}" y="${SCHED_HEAD - 12}">${esc(lab)}</text>`; }
+  }
+  let y = SCHED_HEAD, bg = '', fg = '';
+  lanes.forEach((ln, li) => {
+    const bars = ln.items.filter(x => !x.ms), mss = ln.items.filter(x => x.ms), tw = n => String(n).length * SCHED_CH;
+    const lv = packLevels(bars.map(x => ({ s:xOf(x.s), e:Math.max(xOf(x.e), xOf(x.s) + 3) })));
+    // 라벨 단: 막대 안에 못 들어가는 이름, 마일스톤(날짜·이름), 통합심의 ▼ — 막대 단과 따로 겹침을 피한다
+    const lbs = [];
+    bars.forEach(x => { const w = Math.max(3, (x.e - x.s)*px); if (tw(x.name) > w - 6) lbs.push({ x:xOf(x.s), text:x.name, id:x.id }); });
+    mss.forEach(x => lbs.push({ x:xOf(x.s) - 5, text:`${fmtAt(st, x.s)} ${x.name}`, id:x.id, tx:xOf(x.s) }));
+    if (ln.bundle) lbs.push({ x:xOf(ln.bundle.s) - 5, text:'통합심의', bundle:ln.id, tx:xOf(ln.bundle.s) });
+    lbs.forEach(l => { l.w = tw(l.text); l.end = l.x + l.w > W - 4; });
+    const lt = packLevels(lbs.map(l => l.end ? { s:l.x + l.w - l.w, e:l.x + l.w } : { s:l.x, e:l.x + l.w }));
+    const nLT = lbs.length ? Math.max(...lt) + 1 : 0, nBT = bars.length ? Math.max(...lv) + 1 : 0, mk = lbs.some(l => l.tx != null) ? SCHED_MK : 0;
+    const top = y, mkY = top + SCHED_PAD + nLT*SCHED_LBL, barTop = mkY + mk, h = Math.max(30, SCHED_PAD*2 + nLT*SCHED_LBL + mk + nBT*SCHED_TIER);
+    bg += `<rect x="0" y="${top}" width="${W}" height="${h}" class="sl-bg${li%2 ? ' alt' : ''}"/>`;
+    let g = `<text class="sl-nm" x="8" y="${top + 18}">${esc(ln.label)}</text>`;
+    bars.forEach((x, i) => {
+      const col = colorOf(x.row), bx = xOf(x.s), w = Math.max(3, (x.e - x.s)*px), by = barTop + lv[i]*SCHED_TIER, inside = tw(x.name) <= w - 6;
+      g += `<g class="sbar${x.tent ? ' tent' : ''}${LIGHT_TEXT.has(col) ? ' dk' : ''}" data-id="${esc(x.id)}"><title>${esc(x.name)} · ${esc(fmtAt(st, x.s))} ~ ${esc(fmtAt(st, x.e))}${x.tent ? ' (확인 필요)' : ''}</title><rect x="${bx}" y="${by}" width="${w}" height="${SCHED_BAR}" rx="3" fill="${esc(col)}"/>${inside ? `<text class="sbt" x="${bx + 4}" y="${by + 13}">${esc(x.name)}</text>` : ''}</g>`;
+    });
+    lbs.forEach((l, i) => {
+      const ly = top + SCHED_PAD + lt[i]*SCHED_LBL + 10, tx = l.end ? l.x + l.w : l.x;
+      if (l.tx != null) g += `<line class="sld" x1="${l.tx}" x2="${l.tx}" y1="${ly + 2}" y2="${mkY}"/>`;
+      g += `<text class="slb${l.bundle ? ' bd' : ''}" x="${tx}" y="${ly}"${l.end ? ' text-anchor="end"' : ''}>${esc(l.text)}</text>`;
+    });
+    mss.forEach(x => { const mx = xOf(x.s), col = colorOf(x.row);
+      g += `<g class="sms${x.tent ? ' tent' : ''}" data-id="${esc(x.id)}"><title>${esc(x.name)} · ${esc(fmtAt(st, x.s))}${x.tent ? ' (확인 필요)' : ''}</title><polygon points="${mx - 5},${mkY} ${mx + 5},${mkY} ${mx},${mkY + 9}" fill="${esc(col)}"/></g>`; });
+    if (ln.bundle) { const mx = xOf(ln.bundle.s);
+      g += `<g class="sbund" data-bundle="${esc(ln.id)}"><title>통합심의 · ${esc(fmtAt(st, ln.bundle.s))}</title><polygon points="${mx - 5},${mkY} ${mx + 5},${mkY} ${mx},${mkY + 9}"/></g>`; }
+    g += ln.note.split(' · ').filter(Boolean).map((n, i) => `<text class="snote" x="${SCHED_LW + CW + 8}" y="${top + 16 + i*13}">${esc(n)}</text>`).join('');
+    fg += `<g class="slane" data-lane="${esc(ln.id)}">${g}</g>`;
+    y += h;
+  });
+  grid = grid.replace(/@H/g, y);
+  el.innerHTML = `<svg class="ssvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${y}" width="${W}" height="${y}" role="img" aria-label="분야별 일정표">
+    <rect x="0" y="0" width="${W}" height="${SCHED_HEAD}" class="sl-head"/>${bg}<path class="sgrid" d="${grid}"/>
+    <text class="sh" x="8" y="${SCHED_HEAD - 12}">구분</text><text class="sh" x="${SCHED_LW + CW + 8}" y="${SCHED_HEAD - 12}">비고</text>${head}
+    <path class="sgrid c" d="M${SCHED_LW} 0V${y}M${SCHED_LW + CW} 0V${y}"/>${fg}</svg>`;
 }
 function renderInsp(){
   const p = S.cur, st = p.settings, r = S.sel && rowById(S.sel), el = $('#insp');
@@ -989,6 +1661,8 @@ function renderInsp(){
 /* 일정표 이벤트 */
 $('#gTool').addEventListener('click', e => {
   const id = e.target.id, p = S.cur, st = p.settings;
+  if (e.target.dataset && e.target.dataset.gv) { setGView(e.target.dataset.gv); return; }
+  if (id==='gPrint') { window.print(); return; }
   if (id==='gAdd' || id==='gMs') {
     snap(); const base = S.sel && rowById(S.sel);
     const r = { id:uid(), cat: base ? base.cat : 'plan', name: id==='gMs' ? '새 마일스톤' : '새 항목', dur: id==='gMs' ? 0 : 2, start: base ? endOf(base) : 0,
@@ -996,13 +1670,15 @@ $('#gTool').addEventListener('click', e => {
     const idx = base ? p.rows.indexOf(base) + 1 : p.rows.length; p.rows.splice(idx, 0, r); S.sel = r.id; touch(); renderGanttAll(); renderFoot();
     setTimeout(() => { const n = $('#iName'); n && (n.focus(), n.select()); }, 0);
   }
-  if (id==='gFix') { snap(); propagate(p.rows, false); touch(); renderGantt(); renderFoot(); toast('선후관계에 맞춰 뒤 항목을 밀었습니다'); }
+  if (id==='gFix') { snap(); propagate(p.rows, true); touch(); renderGantt(); renderFoot(); toast('선후관계에 맞춰 뒤 항목을 밀거나 당겨 맞췄습니다'); }
   if (id==='gRegen') regenerate();
   if (id==='gZi' || id==='gZo') { st.px = Math.max(16, Math.min(160, st.px + (id==='gZi' ? 8 : -8))); touch(); renderTool(); renderGantt(); }
-  if (id==='gFit') { const w = $('#gScroll').clientWidth - leftW(st) - 20; st.px = Math.max(16, Math.min(160, Math.floor(w / spanMonths(p.rows)))); touch(); renderTool(); renderGantt(); }
+  if (id==='gFit') { const w = S.gv==='sched' ? $('#gSched').clientWidth - SCHED_LW - SCHED_NW - 20 : $('#gScroll').clientWidth - leftW(st) - 20; st.px = Math.max(16, Math.min(160, Math.floor(w / spanMonths(view(p).rows)))); touch(); renderTool(); renderGantt(); }
 });
+$('#gSched').addEventListener('click', e => { if (e.target.id==='gEmptyRun') regenerate(); });
 $('#gBody').addEventListener('click', e => {
   if (e.target.id==='gEmptyRun') { regenerate(); return; }
+  if (scopeParcel()) return;
   if (drag && drag.moved) return;
   const row = e.target.closest('[data-row]');
   if (row) { S.sel = row.dataset.row; renderGantt(); renderInsp(); }
@@ -1010,6 +1686,7 @@ $('#gBody').addEventListener('click', e => {
 });
 let drag = null;
 $('#gBody').addEventListener('pointerdown', e => {
+  if (scopeParcel()) return;
   const el = e.target.closest('.bar,.ms'); if (!el || e.button!==0) return;
   const r = rowById(el.dataset.id); if (!r) return;
   const mode = e.target.classList.contains('l') ? 'l' : e.target.classList.contains('r') ? 'r' : 'm';
@@ -1042,7 +1719,11 @@ $('#insp').addEventListener('change', e => {
   const t = e.target, p = S.cur, st = p.settings;
   if (t.id==='sBase') { snap(); st.base = t.value || nowYM(); touch(); renderGantt(); renderInsp(); return; }
   if (t.dataset.tg) { snap(); st[t.dataset.tg] = t.checked; touch(); renderGantt(); return; }
-  if (t.id==='iAddDep' && t.value) { const r = rowById(S.sel); snap(); r.deps.push(t.value); if (topo(p.rows).length!==p.rows.length) r.deps.pop(); touch(); renderGantt(); renderInsp(); return; }
+  if (t.id==='iAddDep' && t.value) {
+    const r = rowById(S.sel), reaches = (id, seen = new Set()) => id===r.id || (!seen.has(id) && (seen.add(id), (rowById(id)?.deps || []).some(d => reaches(d, seen))));
+    if (reaches(t.value)) { toast('순환이 생겨 선행 항목으로 넣을 수 없습니다'); renderInsp(); return; } // 새 선행이 이 항목을 거쳐 돌아오면 거부
+    snap(); r.deps.push(t.value); touch(); renderGantt(); renderInsp(); return;
+  }
   const k = t.dataset.e; if (!k) return;
   const r = rowById(S.sel); if (!r) return;
   snap();
@@ -1077,7 +1758,7 @@ document.addEventListener('keydown', e => {
 });
 
 function renderFoot(){
-  const p = S.cur, st = p.settings, rows = p.rows, { c, E } = effective(p);
+  const p = S.cur, st = p.settings, v = view(p), rows = v.rows, { c, E } = effective(v);
   const end = rows.length ? Math.max(...rows.map(endOf)) : 0, permit = rows.find(r => r.id==='p_main'), b0 = rows.find(r => r.id==='b0');
   $('#foot').innerHTML = `<span><b>${rows.length}</b>개 항목</span>
     ${permit ? `<span>${esc(permit.name)} 완료 <b>${fmtAt(st, endOf(permit))}</b></span>` : ''}
@@ -1087,7 +1768,7 @@ function renderFoot(){
 }
 
 /* ---------- 프로젝트 관리 ---------- */
-function openProject(p){ S.cur = p; S.sel = null; S.needScroll = true; S.hist = []; S.fut = []; updUndo(); renderAll(); }
+function openProject(p){ S.cur = p; S.sel = null; S.scope = 'all'; S.needScroll = true; S.hist = []; S.fut = []; updUndo(); renderAll(); }
 $('#projSel').addEventListener('change', e => { const p = S.projects.find(x => x.id===e.target.value); if (p) openProject(p); });
 $('#bNew').addEventListener('click', () => { const p = makeProject(false); S.projects.push(p); dirtyIds.add(p.id); flush(); openProject(p); setTab('input'); });
 $('#bDup').addEventListener('click', () => { const p = JSON.parse(JSON.stringify(S.cur)); p.id = uid(); p.example = false; p.input.name += ' (복제)'; p.updatedAt = Date.now(); S.projects.push(p); dirtyIds.add(p.id); flush(); openProject(p); toast('복제했습니다'); });
@@ -1134,8 +1815,13 @@ $('#fImport').addEventListener('change', async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
   try {
     const o = JSON.parse(await f.text()), src = o.project || o;
-    if (!src.input || !Array.isArray(src.rows)) throw new Error('형식이 맞지 않습니다');
-    const p = { ...makeProject(false), ...src, id:uid(), example:false, updatedAt:Date.now() };
+    // id·deps·color는 HTML 속성에 그대로 들어가므로 앱이 만드는 형식만 받는다 (백업 파일로 스크립트 주입 방지)
+    const ID = /^[\w-]+$/, okRow = r => r && typeof r==='object' && typeof r.id==='string' && ID.test(r.id) && Array.isArray(r.deps) && r.deps.every(d => typeof d==='string' && ID.test(d))
+      && Number.isFinite(r.start) && Number.isFinite(r.dur) && (!r.color || /^#[0-9a-f]{6}$/i.test(r.color));
+    if (!src.input || typeof src.input!=='object' || !Array.isArray(src.rows) || !src.rows.every(okRow)) throw new Error('형식이 맞지 않습니다');
+    const base = makeProject(false), p = { ...base, ...src, id:uid(), example:false, updatedAt:Date.now() };
+    p.settings = { ...base.settings, ...(src.settings && typeof src.settings==='object' ? src.settings : {}) };
+    if (!Object.hasOwn(PALETTES, p.settings.palette)) p.settings.palette = base.settings.palette; // 없는 팔레트면 그릴 때마다 멈춘다
     p.input.name = (p.input.name || '불러온 프로젝트');
     S.projects.push(p); dirtyIds.add(p.id); flush(); openProject(p); toast('백업을 새 프로젝트로 불러왔습니다');
   } catch(err) { toast('불러오지 못했습니다: ' + err.message); }
@@ -1150,7 +1836,7 @@ async function exportXlsx(){
     ['지상층수',c.unk.floors?'확인 필요':c.floors,sr('floors')],['지하층수',c.unk.basements?'확인 필요':c.basements,sr('basements')],['최고높이(m)',c.unk.height?'확인 필요':c.height,sr('height')],['굴착깊이(m)',c.unk.depth&&c.unk.basements?'확인 필요':c.depth, sr('depth') || (c.depthEst&&c.basements?`추정: 지하 ${c.basements}층 × 3.6 + 1.5`:'')],['세대수',c.unk.hh?'확인 필요':c.hh,sr('hh')],
     ['특이사항', FLAGS.filter(f => c.f[f[0]]).map(f => f[1]).join(', ') || '없음',''],
     ['특이사항 확인 필요', FLAGS.filter(f => c.unk[f[0]]).map(f => f[1]).join(', ') || '없음',''],
-    ['참고 사항', i.memo || '', ''],
+    ['참고 사항', i.memo || '', ''], ...refsXlsxRows(i),
     ['판정 기준표', `v${RULESET.version}`, `${RULESET.date} 확인 · 법적 판단을 대신하지 않음`]];
   const vt = [['구분','항목','판정','직접 지정','판단 근거','근거 법령','기준 메모','기준 신뢰도','확인일']].concat(RULES.map(r => [r.cat, r.name, ST[E[r.id]], (p.overrides||{})[r.id] ? '예' : '', V[r.id].r, r.law, r.memo, CONF[r.conf], RULESET.date]));
   const M = spanMonths(p.rows);
